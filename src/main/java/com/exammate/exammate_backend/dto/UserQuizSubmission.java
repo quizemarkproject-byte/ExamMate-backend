@@ -9,5 +9,5 @@ import java.util.List;
 @Setter
 public class UserQuizSubmission {
     private String userId;
-    private List<QuestionAnswerSubmission> submissions;
+    private List<QuestionAnswerSubmission> answerSubmissions;
 }

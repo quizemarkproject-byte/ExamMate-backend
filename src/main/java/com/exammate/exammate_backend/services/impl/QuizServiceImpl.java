@@ -41,7 +41,7 @@ public class QuizServiceImpl implements QuizService {
         int totalQuestions = quiz.getQuestions().size();
         int correctAnswers = 0;
 
-        Map<String, String> submittedAnswers = userQuizSubmission.getSubmissions().stream()
+        Map<String, String> submittedAnswers = userQuizSubmission.getAnswerSubmissions().stream()
                 .collect(Collectors.toMap(
                         QuestionAnswerSubmission::getQuestionId,
                         QuestionAnswerSubmission::getSelectedAnswer
