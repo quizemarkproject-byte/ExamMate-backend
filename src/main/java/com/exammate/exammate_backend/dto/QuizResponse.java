@@ -12,5 +12,4 @@ public class QuizResponse {
     private String id;
     private String title;
     private Duration timeLimit;
-    private List<QuestionResponse> questions;
 }

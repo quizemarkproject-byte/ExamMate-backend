@@ -1,0 +1,6 @@
+spring:
+  application.name: exammate-backend
+  config:
+    import: optional:file:.env[.properties]
+
+app.allowed-origins: ${HOSTED_FRONTEND_URL}, ${LOCAL_HOST_FRONTEND_URL}
