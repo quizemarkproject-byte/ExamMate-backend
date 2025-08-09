@@ -8,7 +8,8 @@ import java.util.UUID;
 
 @Getter
 @Setter
-public class UserQuizSubmission {
+public class UserQuizSubmissionRequest {
     private String userId;
+    private UUID quizSessionId;
     private List<QuestionAnswerSubmission> answerSubmissions;
 }
