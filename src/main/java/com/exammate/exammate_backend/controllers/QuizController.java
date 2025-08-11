@@ -1,8 +1,7 @@
 package com.exammate.exammate_backend.controllers;
 
 import com.exammate.exammate_backend.dto.QuizResponse;
-import com.exammate.exammate_backend.dto.QuizResultResponse;
-import com.exammate.exammate_backend.dto.StartQuizResponse;
+import com.exammate.exammate_backend.dto.ResultResponse;
 import com.exammate.exammate_backend.dto.UserQuizSubmissionRequest;
 import com.exammate.exammate_backend.dto.UserTimeRemainingResponse;
 import com.exammate.exammate_backend.services.QuizService;
@@ -39,7 +38,7 @@ public class QuizController {
 
     @PostMapping("/{quizId}/{userId}/start")
     @ResponseStatus(HttpStatus.OK)
-    public StartQuizResponse startQuiz(@PathVariable UUID quizId, @PathVariable String userId) {
+    public QuizResponse startQuiz(@PathVariable UUID quizId, @PathVariable String userId) {
         return quizService.startQuiz(quizId, userId);
     }
 
@@ -51,7 +50,12 @@ public class QuizController {
 
     @PostMapping("/submit/{quizId}")
     @ResponseStatus(HttpStatus.OK)
-    public QuizResultResponse submitQuiz(@PathVariable UUID quizId, @RequestBody UserQuizSubmissionRequest userQuizSubmissionRequest) {
+    public ResultResponse submitQuiz(@PathVariable UUID quizId, @RequestBody UserQuizSubmissionRequest userQuizSubmissionRequest) {
         return quizService.submitQuiz(quizId, userQuizSubmissionRequest);
+    }
+
+    @GetMapping("result/{quizId}/{resultId}/{userId}")
+    public ResultResponse getResult(@PathVariable UUID quizId, @PathVariable UUID resultId, @PathVariable String userId) {
+        return quizService.getUserQuizResult(quizId, resultId, userId);
     }
 }

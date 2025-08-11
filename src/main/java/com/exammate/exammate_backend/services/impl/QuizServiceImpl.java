@@ -1,11 +1,9 @@
 package com.exammate.exammate_backend.services.impl;
 
 import com.exammate.exammate_backend.dto.QuestionAnswerSubmission;
-import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.dto.QuestionResultResponse;
 import com.exammate.exammate_backend.dto.QuizResponse;
-import com.exammate.exammate_backend.dto.QuizResultResponse;
-import com.exammate.exammate_backend.dto.StartQuizResponse;
+import com.exammate.exammate_backend.dto.ResultResponse;
 import com.exammate.exammate_backend.dto.UserQuizSubmissionRequest;
 import com.exammate.exammate_backend.dto.UserTimeRemainingResponse;
 import com.exammate.exammate_backend.models.Question;
@@ -41,6 +39,7 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public List<QuizResponse> getAllQuizzes() {
         return quizRepository.findAll().stream()
+                .peek(quiz -> quiz.setQuestions(null))
                 .map(quiz -> modelMapper.map(quiz, QuizResponse.class))
                 .toList();
     }
@@ -48,13 +47,13 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public QuizResponse getQuizById(UUID quizId) {
         Quiz quiz = getQuizOrThrow(quizId);
+        quiz.setQuestions(null);
         return modelMapper.map(quiz, QuizResponse.class);
     }
 
     @Override
-    public QuizResultResponse submitQuiz(UUID quizId, UserQuizSubmissionRequest submission) {
+    public ResultResponse submitQuiz(UUID quizId, UserQuizSubmissionRequest submission) {
         Quiz quiz = getQuizOrThrow(quizId);
-
         final int totalQuestions = quiz.getQuestions().size();
         int correctAnswers = 0;
 
@@ -64,44 +63,41 @@ public class QuizServiceImpl implements QuizService {
                         QuestionAnswerSubmission::getSelectedAnswer
                 ));
 
-        List<QuestionResultResponse> questionResults = new ArrayList<>();
         for (Question question : quiz.getQuestions()) {
             String chosenAnswer = submittedAnswers.getOrDefault(question.getId(), null);
-            boolean isCorrect = question.getCorrectAnswer().equalsIgnoreCase(chosenAnswer);
-            if (isCorrect) {
+            if (question.getCorrectAnswer().equalsIgnoreCase(chosenAnswer)) {
                 correctAnswers++;
             }
-
-            questionResults.add(QuestionResultResponse.builder()
-                    .options(question.getOptions())
-                    .correctAnswer(question.getCorrectAnswer())
-                    .isCorrect(isCorrect)
-                    .build());
         }
 
         QuizSession quizSession = quizSessionRepository.findByIdAndQuizIdAndUserId(submission.getQuizSessionId(), quizId, submission.getUserId())
                 .orElseThrow();
         quizSession.setExpired(true);
 
+        double scorePercentage = ((double) correctAnswers / (double) totalQuestions) * 100;
+
         QuizResult quizResult = QuizResult.builder()
+                .userId(submission.getUserId())
                 .quizId(quizId)
+                .submittedAnswers(submittedAnswers)
                 .totalQuestions(totalQuestions)
                 .correctAnswers(correctAnswers)
+                .scorePercentage(scorePercentage)
                 .build();
 
         quizSessionRepository.save(quizSession);
         quizResultRepository.save(quizResult);
 
-        return QuizResultResponse.builder()
-                .questionResultResponse(questionResults)
+        return ResultResponse.builder()
+                .id(quizResult.getId())
                 .totalQuestions(totalQuestions)
                 .correctAnswers(correctAnswers)
-                .scorePercentage(quizResult.getScorePercentage())
+                .scorePercentage(scorePercentage)
                 .build();
     }
 
     @Override
-    public StartQuizResponse startQuiz(UUID quizId, String userId) {
+    public QuizResponse startQuiz(UUID quizId, String userId) {
         Quiz quiz = getQuizOrThrow(quizId);
         long totalTimeSeconds = quiz.getTimeLimit().getSeconds();
 
@@ -129,15 +125,9 @@ public class QuizServiceImpl implements QuizService {
                 .totalTimeSeconds(totalTimeSeconds)
                 .build();
 
-        return StartQuizResponse.builder()
-                .id(quizId)
-                .title(quiz.getTitle())
-                .timeLimit(quiz.getTimeLimit())
-                .questions(quiz.getQuestions().stream()
-                        .map(q -> modelMapper.map(q, QuestionResponse.class))
-                        .toList())
-                .timeRemaining(quizTime)
-                .build();
+        QuizResponse response = modelMapper.map(quiz, QuizResponse.class);
+        response.setTimeRemaining(quizTime);
+        return response;
     }
 
     @Override
@@ -153,6 +143,33 @@ public class QuizServiceImpl implements QuizService {
                 .quizSessionId(quizSession.getId())
                 .remainingSeconds(remainingSeconds)
                 .totalTimeSeconds(totalTimeSeconds)
+                .build();
+    }
+
+    @Override
+    public ResultResponse getUserQuizResult(UUID quizId, UUID resultId, String userId) {
+        Quiz quiz = getQuizOrThrow(quizId);
+        QuizResult quizResult = quizResultRepository.findByIdAndQuizIdAndUserId(resultId, quizId, userId).orElseThrow();
+
+        Map<UUID, String> submittedAnswers = quizResult.getSubmittedAnswers();
+
+        List<QuestionResultResponse> questionResults = new ArrayList<>();
+        for (Question question : quiz.getQuestions()) {
+            String chosenAnswer = submittedAnswers.getOrDefault(question.getId(), null);
+
+            questionResults.add(QuestionResultResponse.builder()
+                    .text(question.getText())
+                    .options(question.getOptions())
+                    .correctAnswer(question.getCorrectAnswer())
+                    .isCorrect(question.getCorrectAnswer().equalsIgnoreCase(chosenAnswer))
+                    .build());
+        }
+        return ResultResponse.builder()
+                .id(quizResult.getId())
+                .questionResultResponse(questionResults)
+                .totalQuestions(quizResult.getTotalQuestions())
+                .correctAnswers(quizResult.getCorrectAnswers())
+                .scorePercentage(quizResult.getScorePercentage())
                 .build();
     }
 

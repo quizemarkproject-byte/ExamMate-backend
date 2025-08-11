@@ -94,7 +94,6 @@ public class DataInitializer implements CommandLineRunner {
 
             setQuizToQuestions(quiz2);
             quizRepository.saveAll(List.of(quiz1, quiz2));
-            System.out.println("✅ Quiz data initialized!");
         }
     }
 
