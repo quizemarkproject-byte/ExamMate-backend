@@ -54,8 +54,13 @@ public class QuizController {
         return quizService.submitQuiz(quizId, userQuizSubmissionRequest);
     }
 
-    @GetMapping("result/{quizId}/{resultId}/{userId}")
-    public ResultResponse getResult(@PathVariable UUID quizId, @PathVariable UUID resultId, @PathVariable String userId) {
-        return quizService.getUserQuizResult(quizId, resultId, userId);
+    @GetMapping("/result/user/{userId}")
+    public List<ResultResponse> getAllResultsByUser(@PathVariable String userId) {
+        return quizService.getAllUserQuizResults(userId);
+    }
+
+    @GetMapping("result/{resultId}/user/{userId}")
+    public ResultResponse getUserQuizResult(@PathVariable UUID resultId, @PathVariable String userId) {
+        return quizService.getUserQuizResult(resultId, userId);
     }
 }

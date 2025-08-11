@@ -147,23 +147,40 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public ResultResponse getUserQuizResult(UUID quizId, UUID resultId, String userId) {
-        Quiz quiz = getQuizOrThrow(quizId);
-        QuizResult quizResult = quizResultRepository.findByIdAndQuizIdAndUserId(resultId, quizId, userId).orElseThrow();
+    public ResultResponse getUserQuizResult(UUID resultId, String userId) {
+        QuizResult quizResult = quizResultRepository.findByIdAndUserId(resultId, userId)
+                .orElseThrow();
+        return mapToResultResponse(quizResult);
+    }
 
-        Map<UUID, String> submittedAnswers = quizResult.getSubmittedAnswers();
+    @Override
+    public List<ResultResponse> getAllUserQuizResults(String userId) {
+        return quizResultRepository.findAllByUserId(userId).stream()
+                .map(this::mapToResultResponse)
+                .toList();
+    }
 
-        List<QuestionResultResponse> questionResults = new ArrayList<>();
-        for (Question question : quiz.getQuestions()) {
-            String chosenAnswer = submittedAnswers.getOrDefault(question.getId(), null);
+    private Quiz getQuizOrThrow(UUID quizId) {
+        return quizRepository.findById(quizId)
+                .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + quizId));
+    }
 
-            questionResults.add(QuestionResultResponse.builder()
-                    .text(question.getText())
-                    .options(question.getOptions())
-                    .correctAnswer(question.getCorrectAnswer())
-                    .isCorrect(question.getCorrectAnswer().equalsIgnoreCase(chosenAnswer))
-                    .build());
-        }
+    private ResultResponse mapToResultResponse(QuizResult quizResult) {
+        Quiz quiz = getQuizOrThrow(quizResult.getQuizId());
+
+        List<QuestionResultResponse> questionResults = quiz.getQuestions().stream()
+                .map(question -> {
+                    String chosenAnswer = quizResult.getSubmittedAnswers().get(question.getId());
+                    return QuestionResultResponse.builder()
+                            .text(question.getText())
+                            .options(question.getOptions())
+                            .correctAnswer(question.getCorrectAnswer())
+                            .isCorrect(question.getCorrectAnswer().equalsIgnoreCase(
+                                    chosenAnswer != null ? chosenAnswer : ""))
+                            .build();
+                })
+                .toList();
+
         return ResultResponse.builder()
                 .id(quizResult.getId())
                 .questionResultResponse(questionResults)
@@ -173,8 +190,4 @@ public class QuizServiceImpl implements QuizService {
                 .build();
     }
 
-    private Quiz getQuizOrThrow(UUID quizId) {
-        return quizRepository.findById(quizId)
-                .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + quizId));
-    }
 }

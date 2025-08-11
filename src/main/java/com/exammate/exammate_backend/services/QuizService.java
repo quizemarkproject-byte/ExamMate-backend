@@ -18,5 +18,7 @@ public interface QuizService {
 
     UserTimeRemainingResponse getRemainingTime(UUID quizId, String userId, UUID quizSessionId);
 
-    ResultResponse getUserQuizResult(UUID quizId, UUID resultId, String userId);
+    ResultResponse getUserQuizResult(UUID resultId, String userId);
+
+    List<ResultResponse> getAllUserQuizResults(String userId);
 }
