@@ -1,8 +1,7 @@
 package com.exammate.exammate_backend.services;
 
 import com.exammate.exammate_backend.dto.QuizResponse;
-import com.exammate.exammate_backend.dto.QuizResultResponse;
-import com.exammate.exammate_backend.dto.StartQuizResponse;
+import com.exammate.exammate_backend.dto.ResultResponse;
 import com.exammate.exammate_backend.dto.UserQuizSubmissionRequest;
 import com.exammate.exammate_backend.dto.UserTimeRemainingResponse;
 
@@ -13,9 +12,13 @@ public interface QuizService {
     QuizResponse getQuizById(UUID id);
     List<QuizResponse> getAllQuizzes();
 
-    QuizResultResponse submitQuiz(UUID quizId, UserQuizSubmissionRequest userQuizSubmissionRequest);
+    ResultResponse submitQuiz(UUID quizId, UserQuizSubmissionRequest userQuizSubmissionRequest);
 
-    StartQuizResponse startQuiz(UUID quizId, String userId);
+    QuizResponse startQuiz(UUID quizId, String userId);
 
     UserTimeRemainingResponse getRemainingTime(UUID quizId, String userId, UUID quizSessionId);
+
+    ResultResponse getUserQuizResult(UUID resultId, String userId);
+
+    List<ResultResponse> getAllUserQuizResults(String userId);
 }
