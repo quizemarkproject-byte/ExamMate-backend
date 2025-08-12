@@ -17,6 +17,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ResultResponse {
     private UUID id;
+    private String quizTitle;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<QuestionResultResponse> questionResultResponse;
     private int totalQuestions;

@@ -1,6 +1,5 @@
 package com.exammate.exammate_backend.services.impl;
 
-import com.exammate.exammate_backend.dto.QuestionAnswerSubmission;
 import com.exammate.exammate_backend.dto.QuestionResultResponse;
 import com.exammate.exammate_backend.dto.QuizResponse;
 import com.exammate.exammate_backend.dto.ResultResponse;
@@ -10,6 +9,7 @@ import com.exammate.exammate_backend.models.Question;
 import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.models.QuizResult;
 import com.exammate.exammate_backend.models.QuizSession;
+import com.exammate.exammate_backend.models.SubmittedAnswer;
 import com.exammate.exammate_backend.repositories.QuizRepository;
 import com.exammate.exammate_backend.repositories.QuizResultRepository;
 import com.exammate.exammate_backend.repositories.QuizSessionRepository;
@@ -54,47 +54,19 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public ResultResponse submitQuiz(UUID quizId, UserQuizSubmissionRequest submission) {
         Quiz quiz = getQuizOrThrow(quizId);
-        final int totalQuestions = quiz.getQuestions().size();
-        int correctAnswers = 0;
 
-        Map<UUID, String> submittedAnswers = submission.getAnswerSubmissions().stream()
-                .collect(Collectors.toMap(
-                        QuestionAnswerSubmission::getQuestionId,
-                        QuestionAnswerSubmission::getSelectedAnswer
-                ));
+        QuizSession quizSession = findAndExpireSession(
+                submission.getQuizSessionId(), quizId, submission.getUserId()
+        );
 
-        for (Question question : quiz.getQuestions()) {
-            String chosenAnswer = submittedAnswers.getOrDefault(question.getId(), null);
-            if (question.getCorrectAnswer().equalsIgnoreCase(chosenAnswer)) {
-                correctAnswers++;
-            }
-        }
-
-        QuizSession quizSession = quizSessionRepository.findByIdAndQuizIdAndUserId(submission.getQuizSessionId(), quizId, submission.getUserId())
-                .orElseThrow();
-        quizSession.setExpired(true);
-
-        double scorePercentage = ((double) correctAnswers / (double) totalQuestions) * 100;
-
-        QuizResult quizResult = QuizResult.builder()
-                .userId(submission.getUserId())
-                .quizId(quizId)
-                .submittedAnswers(submittedAnswers)
-                .totalQuestions(totalQuestions)
-                .correctAnswers(correctAnswers)
-                .scorePercentage(scorePercentage)
-                .build();
+        QuizResult quizResult = buildQuizResult(quiz, submission);
 
         quizSessionRepository.save(quizSession);
         quizResultRepository.save(quizResult);
 
-        return ResultResponse.builder()
-                .id(quizResult.getId())
-                .totalQuestions(totalQuestions)
-                .correctAnswers(correctAnswers)
-                .scorePercentage(scorePercentage)
-                .build();
+        return mapToResultResponse(quizResult, false);
     }
+
 
     @Override
     public QuizResponse startQuiz(UUID quizId, String userId) {
@@ -109,7 +81,7 @@ public class QuizServiceImpl implements QuizService {
             quizSession = existingSessionOpt.get();
         } else {
             quizSession = QuizSession.builder()
-                    .quizId(quizId)
+                    .quiz(quiz)
                     .userId(userId)
                     .totalTimeSeconds(totalTimeSeconds)
                     .build();
@@ -150,13 +122,13 @@ public class QuizServiceImpl implements QuizService {
     public ResultResponse getUserQuizResult(UUID resultId, String userId) {
         QuizResult quizResult = quizResultRepository.findByIdAndUserId(resultId, userId)
                 .orElseThrow();
-        return mapToResultResponse(quizResult);
+        return mapToResultResponse(quizResult, true);
     }
 
     @Override
     public List<ResultResponse> getAllUserQuizResults(String userId) {
         return quizResultRepository.findAllByUserId(userId).stream()
-                .map(this::mapToResultResponse)
+                .map(result -> mapToResultResponse(result, false))
                 .toList();
     }
 
@@ -165,29 +137,83 @@ public class QuizServiceImpl implements QuizService {
                 .orElseThrow(() -> new IllegalArgumentException("Quiz not found: " + quizId));
     }
 
-    private ResultResponse mapToResultResponse(QuizResult quizResult) {
-        Quiz quiz = getQuizOrThrow(quizResult.getQuizId());
+    private QuizResult buildQuizResult(Quiz quiz, UserQuizSubmissionRequest submission) {
+        Map<UUID, Question> questionMap = quiz.getQuestions().stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
 
-        List<QuestionResultResponse> questionResults = quiz.getQuestions().stream()
-                .map(question -> {
-                    String chosenAnswer = quizResult.getSubmittedAnswers().get(question.getId());
-                    return QuestionResultResponse.builder()
-                            .text(question.getText())
-                            .options(question.getOptions())
-                            .correctAnswer(question.getCorrectAnswer())
-                            .isCorrect(question.getCorrectAnswer().equalsIgnoreCase(
-                                    chosenAnswer != null ? chosenAnswer : ""))
-                            .build();
-                })
-                .toList();
+        QuizResult quizResult = QuizResult.builder()
+                .userId(submission.getUserId())
+                .quiz(quiz)
+                .build();
+
+        int correctAnswers = 0;
+        List<SubmittedAnswer> submittedAnswers = new ArrayList<>();
+
+        for (var s : submission.getAnswerSubmissions()) {
+            Question question = questionMap.get(s.getQuestionId());
+            if (question == null) {
+                throw new IllegalArgumentException("Invalid question ID: " + s.getQuestionId());
+            }
+
+            if (s.getSelectedAnswer() != null &&
+                    question.getCorrectAnswer().equalsIgnoreCase(s.getSelectedAnswer())) {
+                correctAnswers++;
+            }
+
+            submittedAnswers.add(SubmittedAnswer.builder()
+                    .quizResult(quizResult)
+                    .question(question)
+                    .answer(s.getSelectedAnswer())
+                    .build());
+        }
+
+        double scorePercentage = ((double) correctAnswers / quiz.getQuestions().size()) * 100;
+
+        quizResult.setTotalQuestions(quiz.getQuestions().size());
+        quizResult.setCorrectAnswers(correctAnswers);
+        quizResult.setScorePercentage(scorePercentage);
+        quizResult.setSubmittedAnswers(submittedAnswers);
+
+        return quizResult;
+    }
+
+    private QuizSession findAndExpireSession(UUID sessionId, UUID quizId, String userId) {
+        QuizSession session = quizSessionRepository
+                .findByIdAndQuizIdAndUserId(sessionId, quizId, userId)
+                .orElseThrow();
+        session.setExpired(true);
+        return session;
+    }
+
+    private ResultResponse mapToResultResponse(QuizResult quizResult, boolean showResultResponse) {
+        List<QuestionResultResponse> questionResultResponse = null;
+
+        if (showResultResponse) {
+            questionResultResponse = quizResult.getSubmittedAnswers().stream()
+                    .map(submittedAnswer -> {
+                        Question question = submittedAnswer.getQuestion();
+                        return QuestionResultResponse.builder()
+                                .text(question.getText())
+                                .correctAnswer(question.getCorrectAnswer())
+                                .options(question.getOptions())
+                                .chosenAnswer(submittedAnswer.getAnswer())
+                                .isCorrect(submittedAnswer.getAnswer()
+                                        .equals(question.getCorrectAnswer()))
+                                .build();
+                    })
+                    .toList();
+        }
 
         return ResultResponse.builder()
                 .id(quizResult.getId())
-                .questionResultResponse(questionResults)
+                .quizTitle(quizResult.getQuiz().getTitle())
                 .totalQuestions(quizResult.getTotalQuestions())
+                .questionResultResponse(questionResultResponse)
                 .correctAnswers(quizResult.getCorrectAnswers())
                 .scorePercentage(quizResult.getScorePercentage())
                 .build();
     }
+
+
 
 }
