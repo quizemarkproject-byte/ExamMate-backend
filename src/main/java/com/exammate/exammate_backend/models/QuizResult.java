@@ -1,20 +1,27 @@
 package com.exammate.exammate_backend.models;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,18 +35,16 @@ public class QuizResult {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    private UUID quizId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_id", nullable = false)
+    private Quiz quiz;
     private String userId;
-    @ElementCollection
-    @CollectionTable(
-            name = "submitted_answers",
-            joinColumns = @JoinColumn(name = "quiz_result_id")
-    )
-    @MapKeyColumn(name = "question_id")
-    @Column(name = "answer")
-    private Map<UUID, String> submittedAnswers;
+    @OneToMany(mappedBy = "quizResult", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SubmittedAnswer> submittedAnswers = new ArrayList<>();
     private int totalQuestions;
     private int correctAnswers;
     private double scorePercentage;
+    @Builder.Default
+    private LocalDateTime submittedAt = LocalDateTime.now();
 
 }

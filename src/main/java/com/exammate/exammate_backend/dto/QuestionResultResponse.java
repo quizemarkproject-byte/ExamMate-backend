@@ -13,6 +13,7 @@ public class QuestionResultResponse {
     private String text;
     private List<String> options;
     private String correctAnswer;
+    private String chosenAnswer;
     private boolean isCorrect;
 
 }

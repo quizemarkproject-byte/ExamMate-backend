@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.repositories;
 
+import com.exammate.exammate_backend.dto.ResultResponse;
 import com.exammate.exammate_backend.models.QuizResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 
