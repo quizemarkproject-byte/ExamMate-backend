@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -186,19 +187,23 @@ public class QuizServiceImpl implements QuizService {
     }
 
     private ResultResponse mapToResultResponse(QuizResult quizResult, boolean showResultResponse) {
-        List<QuestionResultResponse> questionResultResponse = null;
+        List<QuestionResultResponse> questionResultResponse = Collections.emptyList();
 
         if (showResultResponse) {
-            questionResultResponse = quizResult.getSubmittedAnswers().stream()
-                    .map(submittedAnswer -> {
-                        Question question = submittedAnswer.getQuestion();
+            Map<UUID, SubmittedAnswer> submittedMap = quizResult.getSubmittedAnswers().stream()
+                    .collect(Collectors.toMap(sa -> sa.getQuestion().getId(), sa -> sa));
+
+            questionResultResponse = quizResult.getQuiz().getQuestions().stream()
+                    .map(question -> {
+                        SubmittedAnswer submitted = submittedMap.get(question.getId());
+                        String chosenAnswer = submitted != null ? submitted.getAnswer() : null;
+
                         return QuestionResultResponse.builder()
                                 .text(question.getText())
                                 .correctAnswer(question.getCorrectAnswer())
                                 .options(question.getOptions())
-                                .chosenAnswer(submittedAnswer.getAnswer())
-                                .isCorrect(submittedAnswer.getAnswer()
-                                        .equals(question.getCorrectAnswer()))
+                                .chosenAnswer(chosenAnswer)
+                                .isCorrect(chosenAnswer != null && chosenAnswer.equals(question.getCorrectAnswer()))
                                 .build();
                     })
                     .toList();
@@ -213,7 +218,5 @@ public class QuizServiceImpl implements QuizService {
                 .scorePercentage(quizResult.getScorePercentage())
                 .build();
     }
-
-
 
 }
