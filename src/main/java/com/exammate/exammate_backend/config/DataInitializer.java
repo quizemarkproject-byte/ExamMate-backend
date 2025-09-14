@@ -53,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
             Quiz quiz1 = Quiz.builder()
                     .title("General Knowledge Quiz")
                     .timeLimit(Duration.ofMinutes(3))
+                    .questionLimit(5)
                     .questions(questions)
                     .build();
 
@@ -89,6 +90,7 @@ public class DataInitializer implements CommandLineRunner {
             Quiz quiz2 = Quiz.builder()
                     .title("Advanced Calculus")
                     .timeLimit(Duration.ofHours(5))
+                    .questionLimit(5)
                     .questions(questions2)
                     .build();
 

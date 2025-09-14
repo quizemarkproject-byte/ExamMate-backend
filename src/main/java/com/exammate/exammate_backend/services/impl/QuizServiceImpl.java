@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.services.impl;
 
+import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.dto.QuestionResultResponse;
 import com.exammate.exammate_backend.dto.QuizResponse;
 import com.exammate.exammate_backend.dto.ResultResponse;
@@ -62,12 +63,13 @@ public class QuizServiceImpl implements QuizService {
 
         QuizResult quizResult = buildQuizResult(quiz, submission);
 
-        quizSessionRepository.save(quizSession);
+        quizResult.setQuizSession(quizSession);
+        quizSession.setResult(quizResult);
+
         quizResultRepository.save(quizResult);
 
         return mapToResultResponse(quizResult, false);
     }
-
 
     @Override
     public QuizResponse startQuiz(UUID quizId, String userId) {
@@ -81,10 +83,23 @@ public class QuizServiceImpl implements QuizService {
         if (existingSessionOpt.isPresent()) {
             quizSession = existingSessionOpt.get();
         } else {
+            List<Question> quizQuestions = new ArrayList<>(quiz.getQuestions());
+            Collections.shuffle(quizQuestions);
+
+            int limit = Math.min(quiz.getQuestionLimit(), quizQuestions.size());
+            List<Question> selectedQuestions = quizQuestions.subList(0, limit);
+
+            selectedQuestions.forEach(q -> {
+                List<String> shuffledOptions = new ArrayList<>(q.getOptions());
+                Collections.shuffle(shuffledOptions);
+                q.setOptions(shuffledOptions);
+            });
+
             quizSession = QuizSession.builder()
                     .quiz(quiz)
                     .userId(userId)
                     .totalTimeSeconds(totalTimeSeconds)
+                    .questions(selectedQuestions)
                     .build();
             quizSessionRepository.save(quizSession);
         }
@@ -100,6 +115,12 @@ public class QuizServiceImpl implements QuizService {
 
         QuizResponse response = modelMapper.map(quiz, QuizResponse.class);
         response.setTimeRemaining(quizTime);
+        response.setQuestions(
+                quizSession.getQuestions()
+                        .stream()
+                        .map(q -> modelMapper.map(q, QuestionResponse.class))
+                        .toList()
+        );
         return response;
     }
 
@@ -193,7 +214,7 @@ public class QuizServiceImpl implements QuizService {
             Map<UUID, SubmittedAnswer> submittedMap = quizResult.getSubmittedAnswers().stream()
                     .collect(Collectors.toMap(sa -> sa.getQuestion().getId(), sa -> sa));
 
-            questionResultResponse = quizResult.getQuiz().getQuestions().stream()
+            questionResultResponse = quizResult.getQuizSession().getQuestions().stream()
                     .map(question -> {
                         SubmittedAnswer submitted = submittedMap.get(question.getId());
                         String chosenAnswer = submitted != null ? submitted.getAnswer() : null;

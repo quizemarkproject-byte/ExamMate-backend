@@ -30,6 +30,7 @@ public class Quiz {
     private UUID id;
     private String title;
     private Duration timeLimit;
+    private int questionLimit;
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Question> questions;
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
