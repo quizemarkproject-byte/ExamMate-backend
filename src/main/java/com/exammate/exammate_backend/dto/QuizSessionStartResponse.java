@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class CategorySessionStartResponse {
+public class QuizSessionStartResponse {
     private UUID sessionId;
     private List<QuestionResponse> questions;
     private long totalTimeInSeconds;

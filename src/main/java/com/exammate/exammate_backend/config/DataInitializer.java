@@ -1,8 +1,8 @@
 package com.exammate.exammate_backend.config;
 
-import com.exammate.exammate_backend.models.Category;
+import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.models.Question;
-import com.exammate.exammate_backend.repositories.CategoryRepository;
+import com.exammate.exammate_backend.repositories.QuizRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -14,27 +14,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
-        private final CategoryRepository categoryRepository;
+        private final QuizRepository quizRepository;
 
 
     @Override
     public void run(String... args) {
-        if (categoryRepository.count() == 0) {
 
-            Category general = new Category();
-            general.setName("General Knowledge");
-            general.setTimeLimit(Duration.ofMinutes(10));
-            general.setQuestionLimit(5);
+                if (quizRepository.count() == 0) {
 
-            Category math = new Category();
-            math.setName("Math");
-            math.setTimeLimit(Duration.ofMinutes(15));
-            math.setQuestionLimit(7);
+                        Quiz general = new Quiz();
+                        general.setName("General Knowledge");
+                        general.setTimeLimit(Duration.ofMinutes(10));
+                        general.setQuestionLimit(5);
 
-            Category science = new Category();
-            science.setName("Science");
-            science.setTimeLimit(Duration.ofMinutes(12));
-            science.setQuestionLimit(6);
+                        Quiz math = new Quiz();
+                        math.setName("Math");
+                        math.setTimeLimit(Duration.ofMinutes(15));
+                        math.setQuestionLimit(7);
+
+                        Quiz science = new Quiz();
+                        science.setName("Science");
+                        science.setTimeLimit(Duration.ofMinutes(12));
+                        science.setQuestionLimit(6);
 
             // General Knowledge Questions
             List<Question> generalQuestions = List.of(
@@ -96,13 +97,13 @@ public class DataInitializer implements CommandLineRunner {
                         .build()
             );
 
-            general.setQuestions(generalQuestions);
-            math.setQuestions(mathQuestions);
-            science.setQuestions(scienceQuestions);
+                        general.setQuestions(generalQuestions);
+                        math.setQuestions(mathQuestions);
+                        science.setQuestions(scienceQuestions);
 
-            categoryRepository.save(general);
-            categoryRepository.save(math);
-            categoryRepository.save(science);
+                        quizRepository.save(general);
+                        quizRepository.save(math);
+                        quizRepository.save(science);
         }
     }
 

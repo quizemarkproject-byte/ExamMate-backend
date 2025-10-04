@@ -1,23 +1,22 @@
 package com.exammate.exammate_backend.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,28 +26,23 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategorySession {
+public class Quiz {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @Column(nullable = false, unique = true)
+    private String name;
+    
+    private Duration timeLimit;
+    private int questionLimit;
 
-    private String userId;
-    @Builder.Default
-    private Instant startedAt = Instant.now();
-    private boolean expired;
-
-    @OneToMany(mappedBy = "categorySession", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CategoryResult> results;
-
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
-        name = "category_session_question",
-        joinColumns = @JoinColumn(name = "category_session_id"),
+        name = "quiz_question",
+        joinColumns = @JoinColumn(name = "quiz_id"),
         inverseJoinColumns = @JoinColumn(name = "question_id")
     )
+    @JsonIgnore
     private List<Question> questions;
 }

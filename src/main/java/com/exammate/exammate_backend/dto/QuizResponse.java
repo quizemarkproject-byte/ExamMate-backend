@@ -5,13 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class CategorySessionStartRequest {
-    private UUID categoryId;
-    private String userId;
+public class QuizResponse {
+    private UUID id;
+    private String name;
+    private Duration timeLimit;
+    private int questionLimit;
 }

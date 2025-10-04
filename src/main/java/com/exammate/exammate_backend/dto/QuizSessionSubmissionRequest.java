@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategorySessionSubmissionRequest {
+public class QuizSessionSubmissionRequest {
     private UUID sessionId;
     private String userId;
     private List<AnswerSubmission> answers;

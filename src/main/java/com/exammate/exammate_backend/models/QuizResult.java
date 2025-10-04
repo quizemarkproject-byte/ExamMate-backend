@@ -21,14 +21,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategoryResult {
+public class QuizResult {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_session_id")
-    private CategorySession categorySession;
+    @JoinColumn(name = "quiz_session_id")
+    private QuizSession quizSession;
 
     private String userId;
     private int score;
