@@ -30,5 +30,5 @@ public class Question {
     private String correctAnswer;
     @ManyToMany(mappedBy = "questions")
     @JsonIgnore
-    private List<Category> categories;
+    private List<Quiz> categories;
 }

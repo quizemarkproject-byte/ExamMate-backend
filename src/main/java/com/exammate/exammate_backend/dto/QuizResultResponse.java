@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class CategoryResultResponse {
+public class QuizResultResponse {
     private UUID id;
     private String userId;
     private int score;

@@ -8,5 +8,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface QuestionRepository  extends JpaRepository<Question, UUID> {
-	Optional<List<Question>> findByCategories_Id(UUID categoryId);
+	Optional<List<Question>> findByCategories_Id(UUID quizId);
 }

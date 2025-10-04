@@ -1,0 +1,42 @@
+package com.exammate.exammate_backend.services.impl;
+
+import com.exammate.exammate_backend.dto.QuestionResponse;
+import com.exammate.exammate_backend.dto.QuizResponse;
+import com.exammate.exammate_backend.exception.NotFoundException;
+import com.exammate.exammate_backend.models.Question;
+import com.exammate.exammate_backend.repositories.QuizRepository;
+import com.exammate.exammate_backend.repositories.QuestionRepository;
+import com.exammate.exammate_backend.services.QuizService;
+import lombok.RequiredArgsConstructor;
+
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class QuizServiceImpl implements QuizService {
+    private final QuizRepository quizRepository;
+    private final QuestionRepository questionRepository;
+    private final ModelMapper modelMapper;
+
+    @Override
+    public List<QuizResponse> getAllQuizzes() {
+        return quizRepository.findAll().stream()
+                .map(quiz -> modelMapper.map(quiz, QuizResponse.class))
+                .toList();
+    }
+
+    @Override
+    public List<QuestionResponse> getQuestionsByQuiz(UUID quizId) {
+        quizRepository.findById(quizId).orElseThrow(
+            () -> new NotFoundException("Quiz not found")
+        );
+        List<Question> questions = questionRepository.findByCategories_Id(quizId).orElse(List.of());
+        return questions.stream()
+        .map(q -> modelMapper.map(q, QuestionResponse.class))
+        .toList();
+    }
+}
