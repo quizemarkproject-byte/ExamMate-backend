@@ -5,15 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.UUID;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuestionResponse {
-    private UUID id;
-    private String text;
-    private List<String> options;
+@Builder
+public class CategorySessionStartRequest {
+    private UUID categoryId;
+    private String userId;
 }
