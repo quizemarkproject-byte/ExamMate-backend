@@ -17,6 +17,7 @@ public class QuizResultResponse {
     private String userId;
     private int score;
     private int totalQuestions;
+    private String quizTitle;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Question> questions;
 

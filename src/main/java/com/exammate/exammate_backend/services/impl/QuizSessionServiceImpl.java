@@ -164,6 +164,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
                 .userId(result.getUserId())
                 .score(result.getScore())
                 .totalQuestions(result.getTotalQuestions())
+                .quizTitle(result.getQuizSession().getQuiz().getName())
                 .questions(questionResultResponse)
                 .build();
     }
