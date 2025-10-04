@@ -1,6 +1,7 @@
 package com.exammate.exammate_backend.models;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,21 +15,22 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+@Entity
 @Getter
 @Setter
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubmittedAnswer {
+public class CategoryResult {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
-    @ManyToOne
-    @JoinColumn(name = "quiz_result_id", nullable = false)
-    private QuizResult quizResult;
-    @ManyToOne
-    @JoinColumn(name = "question_id", nullable = false)
-    private Question question;
-    private String answer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_session_id")
+    private CategorySession categorySession;
+
+    private String userId;
+    private int score;
+    private int totalQuestions;
 }

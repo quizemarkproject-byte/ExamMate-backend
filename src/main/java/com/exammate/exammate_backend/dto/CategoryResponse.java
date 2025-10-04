@@ -5,15 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.time.Duration;
 import java.util.UUID;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuestionResponse {
+public class CategoryResponse {
     private UUID id;
-    private String text;
-    private List<String> options;
+    private String name;
+    private Duration timeLimit;
+    private int questionLimit;
 }
