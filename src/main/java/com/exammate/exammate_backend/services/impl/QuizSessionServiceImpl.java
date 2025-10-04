@@ -25,8 +25,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import com.exammate.exammate_backend.models.QuizAnswer;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +48,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         }
         Quiz quiz = quizOpt.get();
 
-        QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(), quiz.getId());
+        QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(),
+                quiz.getId());
         if (inProgress != null) {
             return mapSessionToStartResponse(inProgress);
         }
@@ -56,11 +60,11 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         List<Question> limitedQuestions = allQuestions.subList(0, limit);
 
         QuizSession session = QuizSession.builder()
-            .quiz(quiz)
-            .userId(request.getUserId())
-            .expired(false)
-            .questions(limitedQuestions)
-            .build();
+                .quiz(quiz)
+                .userId(request.getUserId())
+                .expired(false)
+                .questions(limitedQuestions)
+                .build();
         session = sessionRepository.save(session);
         return mapSessionToStartResponse(session);
     }
@@ -75,74 +79,109 @@ public class QuizSessionServiceImpl implements QuizSessionService {
             remainingSeconds = Math.max(0, totalTimeInSeconds - elapsed);
         }
         return QuizSessionStartResponse.builder()
-            .sessionId(session.getId())
-            .questions(questions.stream()
-                .map(q -> modelMapper.map(q, QuestionResponse.class))
-                .toList())
-            .totalTimeInSeconds(totalTimeInSeconds)
-            .remainingSeconds(remainingSeconds)
-            .build();
+                .sessionId(session.getId())
+                .questions(questions.stream()
+                        .map(q -> modelMapper.map(q, QuestionResponse.class))
+                        .toList())
+                .totalTimeInSeconds(totalTimeInSeconds)
+                .remainingSeconds(remainingSeconds)
+                .build();
     }
 
     @Override
     public QuizResultResponse submitSession(QuizSessionSubmissionRequest request) {
         QuizSession session = sessionRepository.findById(request.getSessionId())
-            .orElseThrow(() -> new NotFoundException("Session not found"));
+                .orElseThrow(() -> new NotFoundException("Session not found"));
         if (session.isExpired()) {
             throw new BadRequestException("This session has already been submitted.");
         }
+
         List<Question> questions = session.getQuestions();
+        Map<UUID, Question> questionById = questions.stream().collect(Collectors.toMap(Question::getId, q -> q));
+
+        QuizResult result = new QuizResult();
+        result.setQuizSession(session);
+        result.setUserId(request.getUserId());
+        result.setTotalQuestions(questions.size());
+
         int score = 0;
-        for (QuizSessionSubmissionRequest.AnswerSubmission ans : request.getAnswers()) {
-            for (Question q : questions) {
-                if (q.getId().equals(ans.getQuestionId()) && q.getCorrectAnswer().equals(ans.getAnswer())) {
+        if (request.getAnswers() != null) {
+            for (QuizSessionSubmissionRequest.AnswerSubmission ans : request.getAnswers()) {
+                Question q = questionById.get(ans.getQuestionId());
+                if (q == null)
+                    continue; // ignore unknown question IDs
+
+                boolean correct = q.getCorrectAnswer() != null && q.getCorrectAnswer().equals(ans.getAnswer());
+                if (correct)
                     score++;
-                }
+
+                QuizAnswer qa = QuizAnswer.builder()
+                        .question(q)
+                        .chosenAnswer(ans.getAnswer())
+                        .correct(correct)
+                        .build();
+                result.addAnswer(qa);
             }
         }
-    QuizResult result = new QuizResult();
-    result.setQuizSession(session);
-        result.setUserId(request.getUserId());
+
         result.setScore(score);
-        result.setTotalQuestions(questions.size());
         resultRepository.save(result);
+
         session.setExpired(true);
         sessionRepository.save(session);
-        return QuizResultResponse.builder()
-            .id(result.getId())
-            .userId(result.getUserId())
-            .score(result.getScore())
-            .totalQuestions(result.getTotalQuestions())
-            .build();
-    }
 
-    @Override
-    public List<QuizResultResponse> getAllResultsForUser(String userId) {
-    List<QuizResult> quizResults = resultRepository.findByUserId(userId);
-        if (quizResults.isEmpty()) {
-        return Collections.emptyList();
-    }
-        return quizResults.stream()
-                .map(result -> QuizResultResponse.builder()
+        return QuizResultResponse.builder()
                 .id(result.getId())
                 .userId(result.getUserId())
                 .score(result.getScore())
                 .totalQuestions(result.getTotalQuestions())
-                    .questions(result.getQuizSession().getQuestions())
-                .build())
-            .toList();
+                .build();
     }
 
-    @Override
-    public QuizResultResponse getResultById(UUID resultId) {
-        QuizResult result = resultRepository.findById(resultId).orElse(null);
-        
+    private QuizResultResponse mapResultToDto(QuizResult result) {
+        List<QuizResultResponse.Question> questionResultResponse = Collections.emptyList();
+
+        Map<UUID, QuizAnswer> submittedMap = result.getAnswers().stream()
+                .collect(Collectors.toMap(sa -> sa.getQuestion().getId(), sa -> sa));
+
+        questionResultResponse = result.getQuizSession().getQuestions().stream()
+                .map(question -> {
+                    QuizAnswer submitted = submittedMap.get(question.getId());
+                    String chosenAnswer = submitted != null ? submitted.getChosenAnswer() : null;
+
+                    return QuizResultResponse.Question.builder()
+                            .id(question.getId())
+                            .text(question.getText())
+                            .options(question.getOptions())
+                            .chosenAnswer(chosenAnswer)
+                            .isCorrect(submitted != null && submitted.isCorrect())
+                            .build();
+                })
+                .toList();
+
         return QuizResultResponse.builder()
-            .id(result.getId())
+                .id(result.getId())
                 .userId(result.getUserId())
                 .score(result.getScore())
                 .totalQuestions(result.getTotalQuestions())
-                .questions(result.getQuizSession().getQuestions())
-        .build();
+                .questions(questionResultResponse)
+                .build();
+    }
+
+    @Override
+    public List<QuizResultResponse> getAllResultsForUser(String userId) {
+        List<QuizResult> quizResults = resultRepository.findByUserId(userId);
+        if (quizResults.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return quizResults.stream()
+                .map(this::mapResultToDto)
+                .toList();
+    }
+
+    @Override
+    public QuizResultResponse getResultById(UUID resultId, String userId) {
+        QuizResult result = resultRepository.findByIdAndQuizSessionUserId(resultId, userId).orElse(null);
+        return mapResultToDto(result);
     }
 }

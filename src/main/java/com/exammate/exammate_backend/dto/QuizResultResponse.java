@@ -1,9 +1,11 @@
 package com.exammate.exammate_backend.dto;
 
-import com.exammate.exammate_backend.models.Question;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,4 +19,16 @@ public class QuizResultResponse {
     private int totalQuestions;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Question> questions;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class Question {
+    private UUID id;
+    private String text;
+    private List<String> options;
+    private String chosenAnswer;
+    private boolean isCorrect;
+    }
 }

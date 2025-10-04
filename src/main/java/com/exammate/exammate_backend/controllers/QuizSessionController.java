@@ -45,17 +45,16 @@ public class QuizSessionController {
     @GetMapping("/results/{userId}")
     @Operation(summary = "Get all results for a user", description = "Retrieve all quiz results for a specific user.")
     public List<QuizResultResponse> getAllResultsForUser(
-            @Parameter(description = "User ID", required = true)
-            @PathVariable String userId) {
+            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
         return quizSessionService.getAllResultsForUser(userId);
     }
 
-    @GetMapping("/result/{resultId}")
+    @GetMapping("/result/{resultId}/user/{userId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get result by ID", description = "Retrieve a specific quiz result by its ID.")
     public QuizResultResponse getResultById(
-            @Parameter(description = "Result ID (UUID)", required = true)
-            @PathVariable UUID resultId) {
-        return quizSessionService.getResultById(resultId);
+            @Parameter(description = "Result ID (UUID)", required = true) @PathVariable UUID resultId,
+            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
+        return quizSessionService.getResultById(resultId, userId);
     }
 }
