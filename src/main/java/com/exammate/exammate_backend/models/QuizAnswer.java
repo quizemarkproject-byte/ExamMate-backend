@@ -7,6 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Column;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,10 +16,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.UUID;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -25,25 +23,23 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuizResult {
+@Table(name = "quiz_answer")
+public class QuizAnswer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quiz_session_id")
-    private QuizSession quizSession;
+    @JoinColumn(name = "quiz_result_id")
+    private QuizResult quizResult;
 
-    private String userId;
-    private int score;
-    private int totalQuestions;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id")
+    private Question question;
 
-    @OneToMany(mappedBy = "quizResult", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<QuizAnswer> answers = new ArrayList<>();
+    @Column
+    private String chosenAnswer;
 
-    public void addAnswer(QuizAnswer answer) {
-        answers.add(answer);
-        answer.setQuizResult(this);
-    }
+    @Column
+    private boolean correct;
 }

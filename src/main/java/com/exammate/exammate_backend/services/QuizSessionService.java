@@ -11,5 +11,5 @@ public interface QuizSessionService {
     com.exammate.exammate_backend.dto.QuizSessionStartResponse startSession(QuizSessionStartRequest request);
     QuizResultResponse submitSession(QuizSessionSubmissionRequest request);
     List<QuizResultResponse> getAllResultsForUser(String userId);
-    QuizResultResponse getResultById(UUID resultId);
+    QuizResultResponse getResultById(UUID resultId, String userId);
 }
