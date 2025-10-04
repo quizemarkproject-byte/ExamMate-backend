@@ -1,5 +1,7 @@
 package com.exammate.exammate_backend.services.impl;
 
+import com.exammate.exammate_backend.dto.CategoryResponse;
+import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.exception.NotFoundException;
 import com.exammate.exammate_backend.models.Category;
 import com.exammate.exammate_backend.models.Question;
@@ -19,16 +21,27 @@ public class CategoryServiceImpl implements CategoryService {
     private final QuestionRepository questionRepository;
 
     @Override
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public List<CategoryResponse> getAllCategories() {
+        return categoryRepository.findAll().stream()
+                .map(cat -> CategoryResponse.builder()
+                        .id(cat.getId())
+                        .name(cat.getName())
+                        .build())
+                .toList();
     }
 
     @Override
-    public List<Question> getQuestionsByCategory(UUID categoryId) {
+    public List<QuestionResponse> getQuestionsByCategory(UUID categoryId) {
         categoryRepository.findById(categoryId).orElseThrow(
             () -> new NotFoundException("Category not found")
         );
         List<Question> questions = questionRepository.findByCategories_Id(categoryId).orElse(List.of());
-        return questions;
+        return questions.stream()
+        .map(q -> QuestionResponse.builder()
+            .id(q.getId())
+            .text(q.getText())
+            .options(q.getOptions())
+            .build())
+        .toList();
     }
 }

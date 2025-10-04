@@ -3,11 +3,11 @@ package com.exammate.exammate_backend.config;
 import com.exammate.exammate_backend.models.Category;
 import com.exammate.exammate_backend.models.Question;
 import com.exammate.exammate_backend.repositories.CategoryRepository;
-import com.exammate.exammate_backend.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.List;
 
 @Component
@@ -15,20 +15,26 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
         private final CategoryRepository categoryRepository;
-        private final QuestionRepository questionRepository;
 
 
     @Override
     public void run(String... args) {
         if (categoryRepository.count() == 0) {
+
             Category general = new Category();
             general.setName("General Knowledge");
+            general.setTimeLimit(Duration.ofMinutes(10));
+            general.setQuestionLimit(5);
 
             Category math = new Category();
             math.setName("Math");
+            math.setTimeLimit(Duration.ofMinutes(15));
+            math.setQuestionLimit(7);
 
             Category science = new Category();
             science.setName("Science");
+            science.setTimeLimit(Duration.ofMinutes(12));
+            science.setQuestionLimit(6);
 
             // General Knowledge Questions
             List<Question> generalQuestions = List.of(

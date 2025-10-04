@@ -11,4 +11,6 @@ import java.util.UUID;
 public class CategorySessionStartResponse {
     private UUID sessionId;
     private List<QuestionResponse> questions;
+    private long totalTimeInSeconds;
+    private long remainingSeconds;
 }

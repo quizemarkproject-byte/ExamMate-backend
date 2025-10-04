@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -42,20 +44,45 @@ public class CategorySessionServiceImpl implements CategorySessionService {
         if (categoryOpt.isEmpty()) {
             throw new ApiException("Category not found");
         }
-    CategorySession session = new CategorySession();
-    session.setCategory(categoryOpt.get());
-    session.setUserId(request.getUserId());
-    session.setStartedAt(LocalDateTime.now());
-    session.setExpired(false);
-    List<Question> questions = questionRepository.findByCategories_Id(request.getCategoryId()).orElse(List.of());
-    session.setQuestions(questions);
-    session = sessionRepository.save(session);
-    return CategorySessionStartResponse.builder()
-        .sessionId(session.getId())
-        .questions(questions.stream()
-            .map(q -> modelMapper.map(q, QuestionResponse.class))
-            .toList())
-        .build();
+        Category category = categoryOpt.get();
+
+        CategorySession inProgress = sessionRepository.findFirstByUserIdAndCategory_IdAndExpiredFalse(request.getUserId(), category.getId());
+        if (inProgress != null) {
+            return mapSessionToStartResponse(inProgress);
+        }
+
+        List<Question> allQuestions = questionRepository.findByCategories_Id(request.getCategoryId()).orElse(List.of());
+        Collections.shuffle(allQuestions);
+        int limit = Math.min(category.getQuestionLimit(), allQuestions.size());
+        List<Question> limitedQuestions = allQuestions.subList(0, limit);
+
+        CategorySession session = CategorySession.builder()
+            .category(category)
+            .userId(request.getUserId())
+            .expired(false)
+            .questions(limitedQuestions)
+            .build();
+        session = sessionRepository.save(session);
+        return mapSessionToStartResponse(session);
+    }
+
+    private CategorySessionStartResponse mapSessionToStartResponse(CategorySession session) {
+        List<Question> questions = session.getQuestions();
+        Category category = session.getCategory();
+        long totalTimeInSeconds = category.getTimeLimit() != null ? category.getTimeLimit().getSeconds() : 0L;
+        long remainingSeconds = totalTimeInSeconds;
+        if (session.getStartedAt() != null && category.getTimeLimit() != null) {
+            long elapsed = Duration.between(session.getStartedAt(), Instant.now()).getSeconds();
+            remainingSeconds = Math.max(0, totalTimeInSeconds - elapsed);
+        }
+        return CategorySessionStartResponse.builder()
+            .sessionId(session.getId())
+            .questions(questions.stream()
+                .map(q -> modelMapper.map(q, QuestionResponse.class))
+                .toList())
+            .totalTimeInSeconds(totalTimeInSeconds)
+            .remainingSeconds(remainingSeconds)
+            .build();
     }
 
     @Override

@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +33,9 @@ public class Category {
 
     @Column(nullable = false, unique = true)
     private String name;
+    
+    private Duration timeLimit;
+    private int questionLimit;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(

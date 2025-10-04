@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +37,8 @@ public class CategorySession {
     private Category category;
 
     private String userId;
-    private LocalDateTime startedAt;
+    @Builder.Default
+    private Instant startedAt = Instant.now();
     private boolean expired;
 
     @OneToMany(mappedBy = "categorySession", cascade = CascadeType.ALL, orphanRemoval = true)

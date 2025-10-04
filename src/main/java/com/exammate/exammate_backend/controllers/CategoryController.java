@@ -27,12 +27,7 @@ public class CategoryController {
     @GetMapping
     @Operation(summary = "Get all categories", description = "Retrieve a list of all available categories.")
     public List<CategoryResponse> getAllCategories() {
-        return categoryService.getAllCategories().stream()
-                .map(cat -> CategoryResponse.builder()
-                        .id(cat.getId())
-                        .name(cat.getName())
-                        .build())
-                .toList();
+        return categoryService.getAllCategories();
     }
 
     @GetMapping("/{categoryId}/questions")
@@ -41,12 +36,6 @@ public class CategoryController {
     public List<QuestionResponse> getQuestionsByCategory(
         @Parameter(description = "UUID of the category", required = true)
         @PathVariable UUID categoryId) {
-    return categoryService.getQuestionsByCategory(categoryId).stream()
-        .map(q -> QuestionResponse.builder()
-            .id(q.getId())
-            .text(q.getText())
-            .options(q.getOptions())
-            .build())
-        .toList();
+    return categoryService.getQuestionsByCategory(categoryId);
     }
 }

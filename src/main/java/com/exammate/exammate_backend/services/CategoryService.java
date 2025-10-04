@@ -1,12 +1,12 @@
 package com.exammate.exammate_backend.services;
 
-import com.exammate.exammate_backend.models.Category;
-import com.exammate.exammate_backend.models.Question;
+import com.exammate.exammate_backend.dto.CategoryResponse;
+import com.exammate.exammate_backend.dto.QuestionResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface CategoryService {
-    List<Category> getAllCategories();
-    List<Question> getQuestionsByCategory(UUID categoryId);
+    List<CategoryResponse> getAllCategories();
+    List<QuestionResponse> getQuestionsByCategory(UUID categoryId);
 }

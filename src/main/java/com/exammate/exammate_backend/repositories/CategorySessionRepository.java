@@ -8,4 +8,7 @@ import java.util.UUID;
 
 public interface CategorySessionRepository extends JpaRepository<CategorySession, UUID> {
     List<CategorySession> findByUserId(String userId);
+
+    // Find in-progress session for a user and category
+    CategorySession findFirstByUserIdAndCategory_IdAndExpiredFalse(String userId, UUID categoryId);
 }
