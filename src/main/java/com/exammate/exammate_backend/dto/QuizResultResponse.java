@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ public class QuizResultResponse {
     private int score;
     private int totalQuestions;
     private String quizTitle;
+    private LocalDateTime completedAt;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<Question> questions;
 

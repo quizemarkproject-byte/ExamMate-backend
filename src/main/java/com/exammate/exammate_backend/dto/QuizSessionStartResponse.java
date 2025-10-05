@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class QuizSessionStartResponse {
     private UUID sessionId;
+    private String quizTitle;
     private List<QuestionResponse> questions;
     private long totalTimeInSeconds;
     private long remainingSeconds;
