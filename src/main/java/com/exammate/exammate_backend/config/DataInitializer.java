@@ -24,7 +24,7 @@ public class DataInitializer implements CommandLineRunner {
 
                         Quiz general = new Quiz();
                         general.setName("General Knowledge");
-                        general.setTimeLimit(Duration.ofMinutes(10));
+                        general.setTimeLimit(Duration.ofMinutes(1));
                         general.setQuestionLimit(5);
 
                         Quiz math = new Quiz();

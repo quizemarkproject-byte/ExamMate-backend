@@ -80,6 +80,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         }
         return QuizSessionStartResponse.builder()
                 .sessionId(session.getId())
+                .quizTitle(quiz.getName())
                 .questions(questions.stream()
                         .map(q -> modelMapper.map(q, QuestionResponse.class))
                         .toList())
@@ -109,7 +110,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
             for (QuizSessionSubmissionRequest.AnswerSubmission ans : request.getAnswers()) {
                 Question q = questionById.get(ans.getQuestionId());
                 if (q == null)
-                    continue; // ignore unknown question IDs
+                    continue;
 
                 boolean correct = q.getCorrectAnswer() != null && q.getCorrectAnswer().equals(ans.getAnswer());
                 if (correct)
@@ -165,6 +166,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
                 .score(result.getScore())
                 .totalQuestions(result.getTotalQuestions())
                 .quizTitle(result.getQuizSession().getQuiz().getName())
+                .completedAt(result.getCompletedAt())
                 .questions(questionResultResponse)
                 .build();
     }

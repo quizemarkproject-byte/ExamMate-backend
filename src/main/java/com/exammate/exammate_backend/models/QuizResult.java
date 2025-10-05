@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
@@ -37,6 +38,8 @@ public class QuizResult {
     private String userId;
     private int score;
     private int totalQuestions;
+    @Builder.Default
+    private LocalDateTime completedAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "quizResult", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
