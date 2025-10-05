@@ -3,4 +3,19 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
+server:
+  servlet:
+    context-path: /api/v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+
 app.allowed-origins: ${HOSTED_FRONTEND_URL}, ${LOCAL_HOST_FRONTEND_URL}
+
+jwt:
+  secret: ${JWT_SECRET:yyU0AdqdxwdENHux5OoQ8Pg9kYddnXm16fOxTPMHsqU=}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
