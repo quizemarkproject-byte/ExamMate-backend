@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/quiz-sessions")
+@RequestMapping("/quiz-sessions")
 @Tag(name = "Quiz Sessions", description = "Endpoints for starting sessions, submitting answers, and retrieving results for quiz sessions.")
 @RequiredArgsConstructor
 public class QuizSessionController {

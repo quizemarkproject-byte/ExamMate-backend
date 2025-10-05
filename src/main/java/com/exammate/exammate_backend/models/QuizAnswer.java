@@ -26,7 +26,7 @@ import java.util.UUID;
 @Table(name = "quiz_answer")
 public class QuizAnswer {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
