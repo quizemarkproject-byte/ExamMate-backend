@@ -1,28 +1,34 @@
 package com.exammate.exammate_backend.services.impl;
 
-import com.exammate.exammate_backend.dto.*;
-import com.exammate.exammate_backend.models.PasswordResetToken;
-import com.exammate.exammate_backend.models.Role;
-import com.exammate.exammate_backend.models.User;
-import com.exammate.exammate_backend.repositories.PasswordResetTokenRepository;
-import com.exammate.exammate_backend.repositories.UserRepository;
-import com.exammate.exammate_backend.security.JwtUtil;
-import com.exammate.exammate_backend.services.AuthService;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.authentication.BadCredentialsException;
-import com.exammate.exammate_backend.exception.InvalidCredentialsException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import com.exammate.exammate_backend.dto.AuthRequest;
+import com.exammate.exammate_backend.dto.AuthResponse;
+import com.exammate.exammate_backend.dto.ResetPasswordRequest;
+import com.exammate.exammate_backend.dto.SignupRequest;
+import com.exammate.exammate_backend.exception.BadRequestException;
+import com.exammate.exammate_backend.exception.InvalidCredentialsException;
+import com.exammate.exammate_backend.models.Role;
+import com.exammate.exammate_backend.models.User;
+import com.exammate.exammate_backend.models.VerificationToken;
+import com.exammate.exammate_backend.models.VerificationToken.TokenType;
+import com.exammate.exammate_backend.repositories.UserRepository;
+import com.exammate.exammate_backend.repositories.VerificationTokenRepository;
+import com.exammate.exammate_backend.security.JwtUtil;
+import com.exammate.exammate_backend.services.AuthService;
+import com.exammate.exammate_backend.services.EmailService;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional
@@ -30,18 +36,37 @@ import java.util.UUID;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordResetTokenRepository tokenRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
     @Override
     public void signup(SignupRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new BadRequestException("Email already in use");
         }
         User u = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), Role.USER);
         userRepository.save(u);
+        VerificationToken evt = VerificationToken.create(u, TokenType.EMAIL_VERIFICATION, 24);
+        verificationTokenRepository.save(evt);
+        String subject = "Verify your ExamMate account";
+        String verificationLink = "http://localhost:8080/api/v1/auth/verify-email?token=" + evt.getToken();
+        String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
+        emailService.sendEmail(u.getEmail(), subject, body);
+    }
+
+    public void verifyEmail(String token) {
+        VerificationToken evt = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
+        if (evt.getExpiryDate().before(new Date()) || evt.getType() != TokenType.EMAIL_VERIFICATION) {
+            throw new BadRequestException("Verification token expired or invalid type");
+        }
+        User user = evt.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+        verificationTokenRepository.deleteByUserAndType(user, TokenType.EMAIL_VERIFICATION);
     }
 
     @Override
@@ -61,25 +86,24 @@ public class AuthServiceImpl implements AuthService {
     public void createPasswordResetToken(String email) {
         Optional<User> userOpt = userRepository.findByEmail(email);
         userOpt.ifPresent(user -> {
-            // remove previous tokens for user
-            tokenRepository.deleteAllByUser(user);
-            String token = UUID.randomUUID().toString();
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.HOUR, 2); // 2 hours expiry
-            PasswordResetToken prt = new PasswordResetToken(token, cal.getTime(), user);
-            tokenRepository.save(prt);
-            // TODO: send token by email. For now token is persisted and can be returned by a dev endpoint if needed.
+            verificationTokenRepository.deleteByUserAndType(user, TokenType.PASSWORD_RESET);
+            VerificationToken prt = VerificationToken.create(user, TokenType.PASSWORD_RESET, 2);
+            verificationTokenRepository.save(prt);
+
+            String subject = "ExamMate Password Reset";
+            String body = String.format("Hello,\n\nYou requested a password reset. Use the following token to reset your password: %s\n\nThis token will expire in 2 hours.", prt.getToken());
+            emailService.sendEmail(user.getEmail(), subject, body);
         });
     }
 
     @Override
     public void resetPassword(ResetPasswordRequest req) {
-        PasswordResetToken prt = tokenRepository.findByToken(req.getToken())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
-        if (prt.getExpiryDate().before(new Date())) throw new IllegalArgumentException("Token expired");
+        VerificationToken prt = verificationTokenRepository.findByToken(req.getToken())
+                .orElseThrow(() -> new BadRequestException("Invalid token"));
+        if (prt.getExpiryDate().before(new Date()) || prt.getType() != TokenType.PASSWORD_RESET) throw new BadRequestException("Token expired or invalid type");
         User user = prt.getUser();
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userRepository.save(user);
-        tokenRepository.deleteByToken(req.getToken());
+        verificationTokenRepository.deleteByUserAndType(user, TokenType.PASSWORD_RESET);
     }
 }

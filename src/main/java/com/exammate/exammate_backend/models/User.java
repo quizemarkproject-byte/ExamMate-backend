@@ -16,6 +16,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class User implements UserDetails {
 
     @Id
@@ -32,10 +33,15 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role = Role.USER;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean enabled = false;
+
     public User(String email, String password, Role role) {
         this.email = email;
         this.password = password;
         this.role = role;
+        this.enabled = false;
     }
 
     @Override
@@ -59,5 +65,5 @@ public class User implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return enabled; }
 }

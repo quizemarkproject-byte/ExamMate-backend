@@ -14,6 +14,16 @@ Create a quiz with:
 - Calculate quiz results based on submitted answers
 
 ## Usages
+### Run code
+```
+HOSTED_FRONTEND_URL=https://myapp.com \
+LOCAL_HOST_FRONTEND_URL=http://localhost:4200 \
+EMAIL_HOST=smtp.gmail.com \
+EMAIL_PORT=587 \
+EMAIL_USERNAME=your-google-email \
+EMAIL_PASSWORD=your-google-app-password \
+mvn spring-boot:run
+```
 ### Get Quizzes
 - Endpoint
 ```

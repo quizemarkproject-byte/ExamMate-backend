@@ -10,4 +10,5 @@ public interface AuthService {
     AuthResponse login(AuthRequest req);
     void createPasswordResetToken(String email);
     void resetPassword(ResetPasswordRequest req);
+    void verifyEmail(String token);
 }
