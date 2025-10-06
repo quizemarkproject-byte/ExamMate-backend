@@ -1,7 +1,6 @@
 package com.exammate.exammate_backend.controllers;
 
 import com.exammate.exammate_backend.dto.*;
-// ...existing imports...
 import com.exammate.exammate_backend.services.AuthService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class AuthController {
 
     private final AuthService authService;
+    @Operation(summary = "Verify email", description = "Verify user email with token from email link")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email verified successfully", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
+    })
+    @GetMapping("/verify-email")
+    @ResponseStatus(HttpStatus.OK)
+    public void verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+    }
 
     @Operation(summary = "Sign up", description = "Register a new user")
     @ApiResponses(value = {
