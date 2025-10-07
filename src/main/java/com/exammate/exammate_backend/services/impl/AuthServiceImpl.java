@@ -1,12 +1,11 @@
 package com.exammate.exammate_backend.services.impl;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import com.exammate.exammate_backend.dto.ResetPasswordRequest;
 import com.exammate.exammate_backend.dto.SignupRequest;
 import com.exammate.exammate_backend.exception.BadRequestException;
 import com.exammate.exammate_backend.exception.InvalidCredentialsException;
-import com.exammate.exammate_backend.models.Role;
 import com.exammate.exammate_backend.models.User;
 import com.exammate.exammate_backend.models.VerificationToken;
 import com.exammate.exammate_backend.models.VerificationToken.TokenType;
@@ -27,6 +25,7 @@ import com.exammate.exammate_backend.security.JwtUtil;
 import com.exammate.exammate_backend.services.AuthService;
 import com.exammate.exammate_backend.services.EmailService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -43,21 +42,33 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
 
     @Override
-    public void signup(SignupRequest req) {
+    public void signup(SignupRequest req, HttpServletRequest request) {
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new BadRequestException("Email already in use");
         }
-        User u = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), Role.USER);
+        if (userRepository.existsByUsername(req.getUsername())) {
+        throw new BadRequestException("Username already taken");
+    }
+        if (!req.getPassword().equals(req.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+    User u = User.builder()
+        .email(req.getEmail())
+        .password(passwordEncoder.encode(req.getPassword()))
+        .fullName(req.getFullName())
+        .username(req.getUsername())
+        .build();
         userRepository.save(u);
         VerificationToken evt = VerificationToken.create(u, TokenType.EMAIL_VERIFICATION, 24);
         verificationTokenRepository.save(evt);
-        String subject = "Verify your ExamMate account";
-        String verificationLink = "http://localhost:8080/api/v1/auth/verify-email?token=" + evt.getToken();
-        String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
-        emailService.sendEmail(u.getEmail(), subject, body);
+    String subject = "Verify your ExamMate account";
+    String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+    String verificationLink = baseUrl + "/auth/verify-email?token=" + evt.getToken();
+    String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
+    emailService.sendEmail(u.getEmail(), subject, body);
     }
 
-    public void verifyEmail(String token) {
+    public String verifyEmail(String token) {
         VerificationToken evt = verificationTokenRepository.findByToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
         if (evt.getExpiryDate().before(new Date()) || evt.getType() != TokenType.EMAIL_VERIFICATION) {
@@ -67,19 +78,22 @@ public class AuthServiceImpl implements AuthService {
         user.setEnabled(true);
         userRepository.save(user);
         verificationTokenRepository.deleteByUserAndType(user, TokenType.EMAIL_VERIFICATION);
+        return "Email verified successfully";
     }
 
     @Override
     public AuthResponse login(AuthRequest req) {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
-            User user = userRepository.findByEmail(req.getEmail())
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
+            User user = userRepository.findByUsername(req.getUsername())
                 .orElseThrow(() -> new InvalidCredentialsException("User not found"));
-            String token = jwtUtil.generateToken(req.getEmail(), user.getId(), user.getRole());
+            String token = jwtUtil.generateToken(req.getUsername(), user.getId(), user.getRole());
             return new AuthResponse(token);
         } catch (BadCredentialsException ex) {
             throw new InvalidCredentialsException();
-        }
+        } catch (DisabledException ex) {
+        throw new BadRequestException("Account not verified. Please check your email.");
+    }
     }
 
     @Override
@@ -98,6 +112,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resetPassword(ResetPasswordRequest req) {
+         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
         VerificationToken prt = verificationTokenRepository.findByToken(req.getToken())
                 .orElseThrow(() -> new BadRequestException("Invalid token"));
         if (prt.getExpiryDate().before(new Date()) || prt.getType() != TokenType.PASSWORD_RESET) throw new BadRequestException("Token expired or invalid type");
