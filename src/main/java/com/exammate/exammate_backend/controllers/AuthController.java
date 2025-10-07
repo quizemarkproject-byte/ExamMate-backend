@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,33 +23,32 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Operation(summary = "Sign up", description = "Register a new user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request or email already in use", content = @Content)
+    })
+    @PostMapping("/signup")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void signup(@Valid @RequestBody SignupRequest req, HttpServletRequest request) {
+        authService.signup(req, request);
+    }
+
     @Operation(summary = "Verify email", description = "Verify user email with token from email link")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Email verified successfully", content = @Content),
             @ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
     })
-    @PostMapping("/verify-email")
+    @GetMapping("/verify-email")
     @ResponseStatus(HttpStatus.OK)
-    public void verifyEmail(@RequestParam(required = true) String token) {
-        authService.verifyEmail(token);
-    }
-
-    @Operation(summary = "Sign up", description = "Register a new user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User created"),
-            @ApiResponse(responseCode = "400", description = "Invalid request or email already in use",
-                    content = @Content)
-    })
-    @PostMapping("/signup")
-    @ResponseStatus(HttpStatus.CREATED)
-    public void signup(@Valid @RequestBody SignupRequest req) {
-        authService.signup(req);
+    public String verifyEmail(@RequestParam(required = true) String token) {
+        return authService.verifyEmail(token);
     }
 
     @Operation(summary = "Login", description = "Authenticate user and return JWT token")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Authentication successful",
-                    content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Authentication successful", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
             @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content)
     })
     @PostMapping("/login")
