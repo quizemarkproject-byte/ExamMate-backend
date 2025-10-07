@@ -1,9 +1,7 @@
 package com.exammate.exammate_backend.services.impl;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,7 +15,6 @@ import com.exammate.exammate_backend.dto.ResetPasswordRequest;
 import com.exammate.exammate_backend.dto.SignupRequest;
 import com.exammate.exammate_backend.exception.BadRequestException;
 import com.exammate.exammate_backend.exception.InvalidCredentialsException;
-import com.exammate.exammate_backend.models.Role;
 import com.exammate.exammate_backend.models.User;
 import com.exammate.exammate_backend.models.VerificationToken;
 import com.exammate.exammate_backend.models.VerificationToken.TokenType;
@@ -47,13 +44,20 @@ public class AuthServiceImpl implements AuthService {
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new BadRequestException("Email already in use");
         }
-        User u = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()), Role.USER);
+        if (!req.getPassword().equals(req.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+    User u = User.builder()
+        .email(req.getEmail())
+        .password(passwordEncoder.encode(req.getPassword()))
+        .fullName(req.getFullName())
+        .username(req.getUsername())
+        .build();
         userRepository.save(u);
         VerificationToken evt = VerificationToken.create(u, TokenType.EMAIL_VERIFICATION, 24);
         verificationTokenRepository.save(evt);
         String subject = "Verify your ExamMate account";
-        String verificationLink = "http://localhost:8080/api/v1/auth/verify-email?token=" + evt.getToken();
-        String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
+        String body = "Hello,\n\nPlease verify your email by using this token:\n" + evt.getToken() + "\n\nIf you did not sign up, please ignore this email.";
         emailService.sendEmail(u.getEmail(), subject, body);
     }
 
@@ -98,6 +102,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resetPassword(ResetPasswordRequest req) {
+         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
         VerificationToken prt = verificationTokenRepository.findByToken(req.getToken())
                 .orElseThrow(() -> new BadRequestException("Invalid token"));
         if (prt.getExpiryDate().before(new Date()) || prt.getType() != TokenType.PASSWORD_RESET) throw new BadRequestException("Token expired or invalid type");

@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -26,9 +27,9 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "Email verified successfully", content = @Content),
             @ApiResponse(responseCode = "400", description = "Invalid or expired token", content = @Content)
     })
-    @GetMapping("/verify-email")
+    @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.OK)
-    public void verifyEmail(@RequestParam String token) {
+    public void verifyEmail(@RequestParam(required = true) String token) {
         authService.verifyEmail(token);
     }
 
@@ -40,7 +41,7 @@ public class AuthController {
     })
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public void signup(@RequestBody SignupRequest req) {
+    public void signup(@Valid @RequestBody SignupRequest req) {
         authService.signup(req);
     }
 
@@ -52,7 +53,7 @@ public class AuthController {
     })
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public AuthResponse login(@RequestBody AuthRequest req) {
+    public AuthResponse login(@Valid @RequestBody AuthRequest req) {
         return authService.login(req);
     }
 
@@ -62,7 +63,7 @@ public class AuthController {
     })
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.OK)
-    public void forgotPassword(@RequestBody ForgotPasswordRequest req) {
+    public void forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
         authService.createPasswordResetToken(req.getEmail());
     }
 
@@ -73,7 +74,7 @@ public class AuthController {
     })
     @PostMapping("/reset-password")
     @ResponseStatus(HttpStatus.OK)
-    public void resetPassword(@RequestBody ResetPasswordRequest req) {
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
         authService.resetPassword(req);
     }
 }

@@ -23,14 +23,22 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+
+    @Column(nullable = false)
+    private String fullName;
+
     @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private String username;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.USER;
 
     @Column(nullable = false)
@@ -42,6 +50,14 @@ public class User implements UserDetails {
         this.password = password;
         this.role = role;
         this.enabled = false;
+    }
+
+    public User(String email, String password, Role role, String fullName) {
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.enabled = false;
+        this.fullName = fullName;
     }
 
     @Override
