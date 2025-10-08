@@ -3,6 +3,7 @@ package com.exammate.exammate_backend.services.impl;
 import java.util.Date;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -41,6 +42,10 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
+    
+    @Value("${app.allowed-origin.hosted}")
+    private String hostedFrontendUrl;
+
     @Override
     public void signup(SignupRequest req, HttpServletRequest request) {
         if (userRepository.existsByEmail(req.getEmail())) {
@@ -62,23 +67,23 @@ public class AuthServiceImpl implements AuthService {
         VerificationToken evt = VerificationToken.create(u, TokenType.EMAIL_VERIFICATION, 24);
         verificationTokenRepository.save(evt);
     String subject = "Verify your ExamMate account";
-    String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
-    String verificationLink = baseUrl + "/auth/verify-email?token=" + evt.getToken();
+    String verificationLink = hostedFrontendUrl + "/verify-email?token=" + evt.getToken();
     String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
     emailService.sendEmail(u.getEmail(), subject, body);
     }
 
-    public String verifyEmail(String token) {
+    public void verifyEmail(String token) {
         VerificationToken evt = verificationTokenRepository.findByToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
+
         if (evt.getExpiryDate().before(new Date()) || evt.getType() != TokenType.EMAIL_VERIFICATION) {
             throw new BadRequestException("Verification token expired or invalid type");
         }
+
         User user = evt.getUser();
         user.setEnabled(true);
         userRepository.save(user);
         verificationTokenRepository.deleteByUserAndType(user, TokenType.EMAIL_VERIFICATION);
-        return "Email verified successfully";
     }
 
     @Override

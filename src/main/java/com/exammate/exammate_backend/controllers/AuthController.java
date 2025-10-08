@@ -42,8 +42,8 @@ public class AuthController {
     })
     @GetMapping("/verify-email")
     @ResponseStatus(HttpStatus.OK)
-    public String verifyEmail(@RequestParam(required = true) String token) {
-        return authService.verifyEmail(token);
+    public void verifyEmail(@RequestParam(required = true) String token) {
+        authService.verifyEmail(token);
     }
 
     @Operation(summary = "Login", description = "Authenticate user and return JWT token")
