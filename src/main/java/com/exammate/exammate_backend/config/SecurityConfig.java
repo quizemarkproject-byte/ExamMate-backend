@@ -17,8 +17,11 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
-    @Value("${app.allowed-origins}")
-    private String[] allowedOrigins;
+    @Value("${app.allowed-origin.hosted}")
+    private String hostedFrontendUrl;
+
+    @Value("${app.allowed-origin.local}")
+    private String localFrontendUrl;
 
     private final JwtAuthenticationFilter jwtFilter;
 
@@ -31,7 +34,7 @@ public class SecurityConfig {
                         .allowedHeaders("*")
                         .allowedMethods("*")
                         .allowCredentials(true)
-                        .allowedOrigins(allowedOrigins);
+                        .allowedOrigins(hostedFrontendUrl, localFrontendUrl);
             }
         };
     }
@@ -39,13 +42,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                    // .requestMatchers("/api/auth/**").permitAll()
-                    // .anyRequest().authenticated()
-                    .anyRequest().permitAll()
-            );
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // .requestMatchers("/api/auth/**").permitAll()
+                        // .anyRequest().authenticated()
+                        .anyRequest().permitAll());
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
