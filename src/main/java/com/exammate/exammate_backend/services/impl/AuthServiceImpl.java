@@ -97,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (BadCredentialsException ex) {
             throw new InvalidCredentialsException();
         } catch (DisabledException ex) {
-        throw new BadRequestException("Account not verified. Please check your email.");
+        throw new BadRequestException("Account not verified. Please verify your account.");
     }
     }
 

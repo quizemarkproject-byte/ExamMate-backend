@@ -32,6 +32,7 @@ public class QuizResultResponse {
     private String text;
     private List<String> options;
     private String chosenAnswer;
+    private String correctAnswer;
     private boolean isCorrect;
     }
 }

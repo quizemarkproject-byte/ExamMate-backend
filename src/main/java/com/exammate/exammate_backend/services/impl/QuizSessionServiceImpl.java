@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -155,6 +156,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
                             .text(question.getText())
                             .options(question.getOptions())
                             .chosenAnswer(chosenAnswer)
+                            .correctAnswer(question.getCorrectAnswer())
                             .isCorrect(submitted != null && submitted.isCorrect())
                             .build();
                 })
@@ -178,6 +180,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
             return Collections.emptyList();
         }
         return quizResults.stream()
+                .sorted(Comparator.comparing(QuizResult::getCompletedAt).reversed())
                 .map(this::mapResultToDto)
                 .toList();
     }
