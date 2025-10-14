@@ -1,22 +1,14 @@
 package com.exammate.exammate_backend.services.impl;
 
+import java.util.Calendar;
 import java.util.Date;
-import java.util.Optional;
+import java.util.List;
+import java.util.Random;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.exammate.exammate_backend.dto.AuthResponse;
 import org.springframework.stereotype.Service;
 
-import com.exammate.exammate_backend.dto.AuthRequest;
-import com.exammate.exammate_backend.dto.AuthResponse;
-import com.exammate.exammate_backend.dto.ResetPasswordRequest;
-import com.exammate.exammate_backend.dto.SignupRequest;
 import com.exammate.exammate_backend.exception.BadRequestException;
-import com.exammate.exammate_backend.exception.InvalidCredentialsException;
 import com.exammate.exammate_backend.models.User;
 import com.exammate.exammate_backend.models.VerificationToken;
 import com.exammate.exammate_backend.models.VerificationToken.TokenType;
@@ -26,7 +18,6 @@ import com.exammate.exammate_backend.security.JwtUtil;
 import com.exammate.exammate_backend.services.AuthService;
 import com.exammate.exammate_backend.services.EmailService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -37,95 +28,67 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final VerificationTokenRepository verificationTokenRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
-    
-    @Value("${app.allowed-origin.hosted}")
-    private String hostedFrontendUrl;
+    private static final int OTP_MINUTES_VALID = 5;
 
     @Override
-    public void signup(SignupRequest req, HttpServletRequest request) {
-        if (userRepository.existsByEmail(req.getEmail())) {
-            throw new BadRequestException("Email already in use");
-        }
-        if (userRepository.existsByUsername(req.getUsername())) {
-        throw new BadRequestException("Username already taken");
-    }
-        if (!req.getPassword().equals(req.getConfirmPassword())) {
-            throw new BadRequestException("Passwords do not match");
-        }
-    User u = User.builder()
-        .email(req.getEmail())
-        .password(passwordEncoder.encode(req.getPassword()))
-        .fullName(req.getFullName())
-        .username(req.getUsername())
-        .build();
-        userRepository.save(u);
-        VerificationToken evt = VerificationToken.create(u, TokenType.EMAIL_VERIFICATION, 24);
-        verificationTokenRepository.save(evt);
-    String subject = "Verify your ExamMate account";
-    String verificationLink = hostedFrontendUrl + "/verify-email?token=" + evt.getToken();
-    String body = "Hello,\n\nPlease verify your email by clicking the link below:\n" + verificationLink + "\n\nIf you did not sign up, please ignore this email.";
-    emailService.sendEmail(u.getEmail(), subject, body);
-    }
-
-    public void verifyEmail(String token) {
-        VerificationToken evt = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new BadRequestException("Invalid or expired verification token"));
-
-        if (evt.getExpiryDate().before(new Date()) || evt.getType() != TokenType.EMAIL_VERIFICATION) {
-            throw new BadRequestException("Verification token expired or invalid type");
-        }
-
-        User user = evt.getUser();
-        user.setEnabled(true);
-        userRepository.save(user);
-        verificationTokenRepository.deleteByUserAndType(user, TokenType.EMAIL_VERIFICATION);
+    public void requestOtp(String email) {
+        User user = userRepository.findByEmail(email).orElseGet(() -> createUserFromEmail(email));
+        // remove existing OTP tokens
+        verificationTokenRepository.deleteByUserAndType(user, TokenType.OTP_LOGIN);
+        String otp = generateOtp();
+        VerificationToken otpToken = buildOtpToken(user, otp, OTP_MINUTES_VALID);
+        verificationTokenRepository.save(otpToken);
+        sendOtpEmail(user.getEmail(), otp);
     }
 
     @Override
-    public AuthResponse login(AuthRequest req) {
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
-            User user = userRepository.findByUsername(req.getUsername())
-                .orElseThrow(() -> new InvalidCredentialsException("User not found"));
-            String token = jwtUtil.generateToken(req.getUsername(), user.getId(), user.getRole());
-            return new AuthResponse(token);
-        } catch (BadCredentialsException ex) {
-            throw new InvalidCredentialsException();
-        } catch (DisabledException ex) {
-        throw new BadRequestException("Account not verified. Please verify your account.");
-    }
-    }
-
-    @Override
-    public void createPasswordResetToken(String email) {
-        Optional<User> userOpt = userRepository.findByEmail(email);
-        userOpt.ifPresent(user -> {
-            verificationTokenRepository.deleteByUserAndType(user, TokenType.PASSWORD_RESET);
-            VerificationToken prt = VerificationToken.create(user, TokenType.PASSWORD_RESET, 2);
-            verificationTokenRepository.save(prt);
-
-            String subject = "ExamMate Password Reset";
-            String body = String.format("Hello,\n\nYou requested a password reset. Use the following token to reset your password: %s\n\nThis token will expire in 2 hours.", prt.getToken());
-            emailService.sendEmail(user.getEmail(), subject, body);
-        });
-    }
-
-    @Override
-    public void resetPassword(ResetPasswordRequest req) {
-         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
-            throw new BadRequestException("Passwords do not match");
+    public AuthResponse verifyOtp(String email, String otp) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("User not found"));
+        List<VerificationToken> tokens = verificationTokenRepository.findByUserAndType(user, TokenType.OTP_LOGIN);
+        VerificationToken match = tokens.stream().filter(t -> t.getToken().equals(otp)).findFirst()
+                .orElseThrow(() -> new BadRequestException("Invalid or expired OTP"));
+        if (match.getExpiryDate().before(new Date())) {
+            verificationTokenRepository.deleteByUserAndType(user, TokenType.OTP_LOGIN);
+            throw new BadRequestException("Invalid or expired OTP");
         }
-        VerificationToken prt = verificationTokenRepository.findByToken(req.getToken())
-                .orElseThrow(() -> new BadRequestException("Invalid token"));
-        if (prt.getExpiryDate().before(new Date()) || prt.getType() != TokenType.PASSWORD_RESET) throw new BadRequestException("Token expired or invalid type");
-        User user = prt.getUser();
-        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
-        userRepository.save(user);
-        verificationTokenRepository.deleteByUserAndType(user, TokenType.PASSWORD_RESET);
+        verificationTokenRepository.deleteByUserAndType(user, TokenType.OTP_LOGIN); // consume
+        String jwt = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole());
+        return new AuthResponse(jwt);
+    }
+
+    private User createUserFromEmail(String email) {
+        User user = User.builder()
+                .email(email)
+                .build();
+        return userRepository.save(user);
+    }
+
+    private String generateOtp() {
+        int n = new Random().nextInt(900_000) + 100_000; // 6-digit
+        return String.valueOf(n);
+    }
+
+    private VerificationToken buildOtpToken(User user, String otp, int minutesValid) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MINUTE, minutesValid);
+        return new VerificationToken(otp, cal.getTime(), TokenType.OTP_LOGIN, user);
+    }
+
+    private void sendOtpEmail(String email, String otp) {
+        String subject = "Your ExamMate login code";
+        String body = String.format("Your one-time login code is: %s\nIt expires in %d minutes.", otp, OTP_MINUTES_VALID);
+        emailService.sendEmail(email, subject, body);
+    }
+
+    private String generateRandomString(int len) {
+        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random r = new Random();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < len; i++) sb.append(alphabet.charAt(r.nextInt(alphabet.length())));
+        return sb.toString();
     }
 }

@@ -43,22 +43,7 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean enabled = false;
-
-    public User(String email, String password, Role role) {
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.enabled = false;
-    }
-
-    public User(String email, String password, Role role, String fullName) {
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.enabled = false;
-        this.fullName = fullName;
-    }
+    private boolean enabled = true;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

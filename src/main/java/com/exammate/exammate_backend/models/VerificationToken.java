@@ -17,7 +17,7 @@ public class VerificationToken {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false) // removed unique = true to allow non-unique OTP codes
     private String token;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -48,6 +48,7 @@ public class VerificationToken {
 
     public enum TokenType {
         EMAIL_VERIFICATION,
-        PASSWORD_RESET
+        PASSWORD_RESET,
+        OTP_LOGIN // added for OTP-based authentication
     }
 }
