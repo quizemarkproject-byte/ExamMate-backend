@@ -74,11 +74,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         List<Question> questions = session.getQuestions();
         Quiz quiz = session.getQuiz();
         long totalTimeInSeconds = quiz.getTimeLimit() != null ? quiz.getTimeLimit().getSeconds() : 0L;
-        long remainingSeconds = totalTimeInSeconds;
-        if (session.getStartedAt() != null && quiz.getTimeLimit() != null) {
-            long elapsed = Duration.between(session.getStartedAt(), Instant.now()).getSeconds();
-            remainingSeconds = Math.max(0, totalTimeInSeconds - elapsed);
-        }
+        long elapsed = Duration.between(session.getStartedAt(), Instant.now()).getSeconds();
+        long remainingSeconds = Math.max(0, totalTimeInSeconds - elapsed);
         return QuizSessionStartResponse.builder()
                 .sessionId(session.getId())
                 .quizTitle(quiz.getName())
