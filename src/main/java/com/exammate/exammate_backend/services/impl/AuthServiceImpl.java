@@ -57,7 +57,9 @@ public class AuthServiceImpl implements AuthService {
         }
         verificationTokenRepository.deleteByUserAndType(user, TokenType.OTP_LOGIN); // consume
         String jwt = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole());
-        return new AuthResponse(jwt);
+        return AuthResponse.builder()
+                .token(jwt)
+                .build();
     }
 
     private User createUserFromEmail(String email) {
