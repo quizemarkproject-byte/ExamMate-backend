@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import com.exammate.exammate_backend.models.QuizAnswer;
+import com.exammate.exammate_backend.dto.CountResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -52,8 +53,11 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(),
                 quiz.getId());
         if (inProgress != null) {
+            System.out.println("Resuming existing session: " + inProgress.getId() + inProgress.getStartedAt());
             return mapSessionToStartResponse(inProgress);
         }
+
+        System.out.println("Creating new session for user: " + request.getUserId() + " in quiz: " + quiz.getName());
 
         List<Question> allQuestions = questionRepository.findByCategories_Id(request.getQuizId()).orElse(List.of());
         Collections.shuffle(allQuestions);
@@ -134,6 +138,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
                 .userId(result.getUserId())
                 .score(result.getScore())
                 .totalQuestions(result.getTotalQuestions())
+                .quizTitle(result.getQuizSession().getQuiz().getName())
+                .completedAt(result.getCompletedAt())
                 .build();
     }
 
@@ -184,7 +190,14 @@ public class QuizSessionServiceImpl implements QuizSessionService {
 
     @Override
     public QuizResultResponse getResultById(UUID resultId, String userId) {
-        QuizResult result = resultRepository.findByIdAndQuizSessionUserId(resultId, userId).orElse(null);
+        QuizResult result = resultRepository.findByIdAndQuizSessionUserId(resultId, userId)
+                .orElseThrow(() -> new NotFoundException("Result not found"));
         return mapResultToDto(result);
+    }
+
+    @Override
+    public CountResponse countResultsForUser(String userId) {
+        long count = resultRepository.countByUserId(userId);
+        return new CountResponse(count);
     }
 }

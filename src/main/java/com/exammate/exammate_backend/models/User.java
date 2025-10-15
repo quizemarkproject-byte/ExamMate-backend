@@ -35,13 +35,26 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean enabled = true;
 
+    // Fields added to align with existing DB schema (avoid NOT NULL violations)
+    @Column(name = "full_name", nullable = false)
+    @Builder.Default
+    private String fullName = "";
+
+    @Column(name = "username", nullable = false)
+    @Builder.Default
+    private String username = "";
+
+    @Column(name = "password", nullable = false)
+    @Builder.Default
+    private String password = "";
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
-    public String getPassword() { return email; }
+    public String getPassword() { return password; }
 
     @Override
     public String getUsername() { return email; }

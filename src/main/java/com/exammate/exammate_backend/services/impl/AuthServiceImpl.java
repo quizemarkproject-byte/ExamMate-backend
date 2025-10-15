@@ -65,6 +65,10 @@ public class AuthServiceImpl implements AuthService {
     private User createUserFromEmail(String email) {
         User user = User.builder()
                 .email(email)
+                // supply non-null values for NOT NULL columns
+                .fullName("")
+                .username(email)
+                .password("")
                 .build();
         return userRepository.save(user);
     }

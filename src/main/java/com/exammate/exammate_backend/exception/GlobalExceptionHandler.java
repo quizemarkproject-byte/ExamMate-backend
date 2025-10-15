@@ -16,6 +16,10 @@ import com.exammate.exammate_backend.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// Additional imports for persistence exceptions
+import jakarta.persistence.PersistenceException;
+import org.hibernate.exception.ConstraintViolationException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
@@ -27,6 +31,16 @@ public class GlobalExceptionHandler {
                 .timestamp(LocalDateTime.now())
                 .error(ex.getMessage())
                 .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotFound(NotFoundException ex) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .error(ex.getMessage())
+                .status(HttpStatus.NOT_FOUND.value())
                 .build();
     }
 
@@ -52,6 +66,17 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         logger.error("Database constraint violation", ex);
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .error("Invalid request data.")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
+
+    @ExceptionHandler({ConstraintViolationException.class, PersistenceException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handlePersistenceExceptions(Exception ex) {
+        logger.error("Persistence error", ex);
         return ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .error("Invalid request data.")
