@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface QuizResultRepository extends JpaRepository<QuizResult, UUID> {
     List<QuizResult> findByUserId(String userId);
     Optional<QuizResult> findByIdAndQuizSessionUserId(UUID id, String userId);
+    long countByUserId(String userId);
 }

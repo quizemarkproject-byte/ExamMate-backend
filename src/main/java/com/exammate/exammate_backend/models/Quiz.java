@@ -33,8 +33,8 @@ public class Quiz {
 
     @Column(nullable = false, unique = true)
     private String name;
-    
-    private Duration timeLimit;
+    @Builder.Default
+    private Duration timeLimit = Duration.ofMinutes(30);
     private int questionLimit;
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})

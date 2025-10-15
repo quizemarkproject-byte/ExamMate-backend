@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+import com.exammate.exammate_backend.dto.CountResponse;
+
 @RestController
 @RequestMapping("/quiz-sessions")
 @Tag(name = "Quiz Sessions", description = "Endpoints for starting sessions, submitting answers, and retrieving results for quiz sessions.")
@@ -56,5 +58,13 @@ public class QuizSessionController {
             @Parameter(description = "Result ID (UUID)", required = true) @PathVariable UUID resultId,
             @Parameter(description = "User ID", required = true) @PathVariable String userId) {
         return quizSessionService.getResultById(resultId, userId);
+    }
+
+    @GetMapping("/results/{userId}/count")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Get results count for a user", description = "Return total number of results for the specified user ID.")
+    public CountResponse countResultsForUser(
+            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
+        return quizSessionService.countResultsForUser(userId);
     }
 }

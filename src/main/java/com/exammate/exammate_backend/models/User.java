@@ -23,18 +23,8 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-
-    @Column(nullable = false)
-    private String fullName;
-
     @Column(unique = true, nullable = false)
     private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
-    private String username;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,22 +33,20 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     @Builder.Default
-    private boolean enabled = false;
+    private boolean enabled = true;
 
-    public User(String email, String password, Role role) {
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.enabled = false;
-    }
+    // Fields added to align with existing DB schema (avoid NOT NULL violations)
+    @Column(name = "full_name", nullable = false)
+    @Builder.Default
+    private String fullName = "";
 
-    public User(String email, String password, Role role, String fullName) {
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.enabled = false;
-        this.fullName = fullName;
-    }
+    @Column(name = "username", nullable = false)
+    @Builder.Default
+    private String username = "";
+
+    @Column(name = "password", nullable = false)
+    @Builder.Default
+    private String password = "";
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

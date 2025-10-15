@@ -3,18 +3,20 @@ spring:
   config:
     import: optional:file:.env[.properties]
   mail:
-    host: ${EMAIL_HOST}
-    port: ${EMAIL_PORT}
+    host: smtp.gmail.com
+    port: 465
     username: ${EMAIL_USERNAME}
     password: ${EMAIL_PASSWORD}
-    properties.mail.smtp:
-      protocol: smtp
-      auth: true
-      starttls.enable: true
-      connectiontimeout: 5000
-      timeout: 3000
-      writetimeout: 5000
     protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl.enable: true
+          starttls.enable: false
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 server:
   servlet:
