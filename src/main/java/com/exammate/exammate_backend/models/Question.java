@@ -1,6 +1,7 @@
 package com.exammate.exammate_backend.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,7 +27,12 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     private String text;
+
+    @ElementCollection
+    @CollectionTable(name = "question_options", joinColumns = @JoinColumn(name = "question_id"))
+    @Column(name = "option_text")
     private List<String> options;
+
     private String correctAnswer;
     @ManyToMany(mappedBy = "questions")
     @JsonIgnore
