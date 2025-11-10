@@ -82,11 +82,7 @@ public class QuizServiceImpl implements QuizService {
                     .orElseThrow(() -> new BadRequestException("Question with id " + existingId + " not found"));
 
             // attach to quiz if not already attached
-            List<Question> qs = quiz.getQuestions();
-            if (qs == null) qs = new ArrayList<>();
-            if (!qs.contains(existing)) qs.add(existing);
-            quiz.setQuestions(qs);
-            quizRepository.save(quiz);
+            attachQuestionsToQuiz(quiz, List.of(existing));
 
             // also ensure the question's categories contains this quiz (maintain bidirectional relation)
             List<Quiz> cats = existing.getCategories();
@@ -99,15 +95,7 @@ public class QuizServiceImpl implements QuizService {
         }
 
         // Otherwise create a new question - validate required fields
-        if (request.getText() == null || request.getText().isBlank()) {
-            throw new BadRequestException("Question text is required");
-        }
-        if (request.getOptions() == null || request.getOptions().isEmpty()) {
-            throw new BadRequestException("Question options are required");
-        }
-        if (request.getCorrectAnswer() == null || request.getCorrectAnswer().isBlank()) {
-            throw new BadRequestException("Question correctAnswer is required");
-        }
+        validateQuestionRequest(request);
 
         Question q = new Question();
         q.setText(request.getText());
@@ -115,14 +103,8 @@ public class QuizServiceImpl implements QuizService {
         q.setCorrectAnswer(request.getCorrectAnswer());
         q.setCategories(List.of(quiz));
         Question saved = questionRepository.save(q);
-        // attach to quiz if not already
-        List<Question> qs = quiz.getQuestions();
-        if (qs == null) {
-            qs = new ArrayList<>();
-        }
-        if (!qs.contains(saved)) qs.add(saved);
-        quiz.setQuestions(qs);
-        quizRepository.save(quiz);
+        // attach newly created question to quiz
+        attachQuestionsToQuiz(quiz, List.of(saved));
         return modelMapper.map(saved, QuestionResponse.class);
     }
 
@@ -147,15 +129,7 @@ public class QuizServiceImpl implements QuizService {
                 toAttachExisting.add(existing);
             } else {
                 // validate
-                if (r.getText() == null || r.getText().isBlank()) {
-                    throw new BadRequestException("Question text is required");
-                }
-                if (r.getOptions() == null || r.getOptions().isEmpty()) {
-                    throw new BadRequestException("Question options are required");
-                }
-                if (r.getCorrectAnswer() == null || r.getCorrectAnswer().isBlank()) {
-                    throw new BadRequestException("Question correctAnswer is required");
-                }
+                validateQuestionRequest(r);
                 Question q = new Question();
                 q.setText(r.getText());
                 q.setOptions(r.getOptions());
@@ -177,13 +151,7 @@ public class QuizServiceImpl implements QuizService {
         allToAttach.addAll(savedNew);
 
         // Attach to quiz (owner side) and save quiz once
-        List<Question> qs = quiz.getQuestions();
-        if (qs == null) qs = new ArrayList<>();
-        for (Question q : allToAttach) {
-            if (!qs.contains(q)) qs.add(q);
-        }
-        quiz.setQuestions(qs);
-        quizRepository.save(quiz);
+        attachQuestionsToQuiz(quiz, allToAttach);
 
         // Ensure question.categories include this quiz and persist changes
         List<Question> updatedQuestions = new ArrayList<>();
@@ -200,17 +168,44 @@ public class QuizServiceImpl implements QuizService {
 
         // Map responses in the same order as requests
         List<QuestionResponse> responses = new ArrayList<>();
+        int createdIndex = 0;
         for (QuestionRequest r : requests) {
             if (r.getExistingQuestionId() != null) {
-                Question existing = questionRepository.findById(r.getExistingQuestionId()).get();
+                Question existing = questionRepository.findById(r.getExistingQuestionId())
+                        .orElseThrow(() -> new BadRequestException("Question with id " + r.getExistingQuestionId() + " not found"));
                 responses.add(modelMapper.map(existing, QuestionResponse.class));
             } else {
                 // consume in order from savedNew
-                Question created = savedNew.removeFirst();
+                Question created = savedNew.get(createdIndex++);
                 responses.add(modelMapper.map(created, QuestionResponse.class));
             }
         }
 
         return responses;
     }
+
+    private void validateQuestionRequest(QuestionRequest r) {
+        if (r.getText() == null || r.getText().isBlank()) {
+            throw new BadRequestException("Question text is required");
+        }
+        if (r.getOptions() == null || r.getOptions().isEmpty()) {
+            throw new BadRequestException("Question options are required");
+        }
+        if (r.getCorrectAnswer() == null || r.getCorrectAnswer().isBlank()) {
+            throw new BadRequestException("Question correctAnswer is required");
+        }
+    }
+
+    // small helper to attach one or more questions to a quiz and persist the quiz
+    private void attachQuestionsToQuiz(Quiz quiz, List<Question> toAttach) {
+        if (toAttach == null || toAttach.isEmpty()) return;
+        List<Question> qs = quiz.getQuestions();
+        if (qs == null) qs = new ArrayList<>();
+        for (Question q : toAttach) {
+            if (!qs.contains(q)) qs.add(q);
+        }
+        quiz.setQuestions(qs);
+        quizRepository.save(quiz);
+    }
+
 }

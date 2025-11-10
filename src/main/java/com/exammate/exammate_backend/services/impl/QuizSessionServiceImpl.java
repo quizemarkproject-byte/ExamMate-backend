@@ -27,11 +27,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import com.exammate.exammate_backend.models.QuizAnswer;
-import com.exammate.exammate_backend.dto.CountResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -44,11 +42,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
 
     @Override
     public QuizSessionStartResponse startSession(QuizSessionStartRequest request) {
-        Optional<Quiz> quizOpt = quizRepository.findById(request.getQuizId());
-        if (quizOpt.isEmpty()) {
-            throw new ApiException("Quiz not found");
-        }
-        Quiz quiz = quizOpt.get();
+        Quiz quiz = quizRepository.findById(request.getQuizId())
+                .orElseThrow(() -> new ApiException("Quiz not found"));
 
         QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(),
                 quiz.getId());
@@ -196,8 +191,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public CountResponse countResultsForUser(String userId) {
+    public com.exammate.exammate_backend.dto.CountResponse countResultsForUser(String userId) {
         long count = resultRepository.countByUserId(userId);
-        return new CountResponse(count);
+        return new com.exammate.exammate_backend.dto.CountResponse(count);
     }
 }
