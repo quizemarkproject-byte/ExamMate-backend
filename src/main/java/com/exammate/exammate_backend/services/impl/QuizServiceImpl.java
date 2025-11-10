@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.services.impl;
 
+import com.exammate.exammate_backend.dto.AdminQuestionResponse;
 import com.exammate.exammate_backend.dto.QuestionRequest;
 import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.dto.QuizRequest;
@@ -49,9 +50,9 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public List<QuestionResponse> getAllQuestions(){
+    public List<AdminQuestionResponse> getAllQuestions(){
         return questionRepository.findAll().stream()
-                .map(q -> modelMapper.map(q, QuestionResponse.class))
+                .map(q -> modelMapper.map(q, AdminQuestionResponse.class))
                 .toList();
     }
 
@@ -71,7 +72,7 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public QuestionResponse createQuestion(UUID quizId, QuestionRequest request) {
+    public AdminQuestionResponse createQuestion(UUID quizId, QuestionRequest request) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
@@ -91,7 +92,7 @@ public class QuizServiceImpl implements QuizService {
             existing.setCategories(cats);
             questionRepository.save(existing);
 
-            return modelMapper.map(existing, QuestionResponse.class);
+            return modelMapper.map(existing, AdminQuestionResponse.class);
         }
 
         // Otherwise create a new question - validate required fields
@@ -105,11 +106,11 @@ public class QuizServiceImpl implements QuizService {
         Question saved = questionRepository.save(q);
         // attach newly created question to quiz
         attachQuestionsToQuiz(quiz, List.of(saved));
-        return modelMapper.map(saved, QuestionResponse.class);
+        return modelMapper.map(saved, AdminQuestionResponse.class);
     }
 
     @Override
-    public List<QuestionResponse> createQuestions(UUID quizId, List<QuestionRequest> requests) {
+    public List<AdminQuestionResponse> createQuestions(UUID quizId, List<QuestionRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             throw new BadRequestException("Question requests cannot be empty");
         }
@@ -167,17 +168,17 @@ public class QuizServiceImpl implements QuizService {
         }
 
         // Map responses in the same order as requests
-        List<QuestionResponse> responses = new ArrayList<>();
+        List<AdminQuestionResponse> responses = new ArrayList<>();
         int createdIndex = 0;
         for (QuestionRequest r : requests) {
             if (r.getExistingQuestionId() != null) {
                 Question existing = questionRepository.findById(r.getExistingQuestionId())
                         .orElseThrow(() -> new BadRequestException("Question with id " + r.getExistingQuestionId() + " not found"));
-                responses.add(modelMapper.map(existing, QuestionResponse.class));
+                responses.add(modelMapper.map(existing, AdminQuestionResponse.class));
             } else {
                 // consume in order from savedNew
                 Question created = savedNew.get(createdIndex++);
-                responses.add(modelMapper.map(created, QuestionResponse.class));
+                responses.add(modelMapper.map(created, AdminQuestionResponse.class));
             }
         }
 

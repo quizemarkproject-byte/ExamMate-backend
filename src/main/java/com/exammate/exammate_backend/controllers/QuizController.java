@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.controllers;
 
+import com.exammate.exammate_backend.dto.AdminQuestionResponse;
 import com.exammate.exammate_backend.dto.QuizResponse;
 import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.dto.QuizRequest;
@@ -38,13 +39,15 @@ public class QuizController {
         return quizService.getQuestionsByQuiz(quizId);
     }
 
+    // admin endpoints
     @GetMapping("/questions")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get all questions", description = "Retrieve a list of all questions in the system")
-    public List<QuestionResponse> getAllQuestions() {
+    public List<AdminQuestionResponse> getAllQuestions() {
         return quizService.getAllQuestions();
     }
 
+    // admin endpoints
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a quiz", description = "Create a new quiz")
@@ -52,23 +55,25 @@ public class QuizController {
         return quizService.createQuiz(request);
     }
 
+    // admin endpoints
     @PostMapping("/{quizId}/questions")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a question", description = "Create a new question under the specified quiz")
-    public QuestionResponse createQuestion(
+    public AdminQuestionResponse createQuestion(
             @Parameter(description = "UUID of the quiz", required = true)
             @PathVariable UUID quizId,
             @Valid @RequestBody QuestionRequest request) {
         return quizService.createQuestion(quizId, request);
     }
 
+    // admin endpoints
     @PostMapping("/{quizId}/questions/bulk")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create or attach multiple questions", description = "Create or attach multiple questions to the specified quiz in one request")
-    public List<QuestionResponse> createQuestionsInBulk(
-            @Parameter(description = "UUID of the quiz", required = true)
-            @PathVariable UUID quizId,
-            @Valid @RequestBody List<QuestionRequest> requests) {
+    public List<AdminQuestionResponse> createQuestionsInBulk(
+             @Parameter(description = "UUID of the quiz", required = true)
+             @PathVariable UUID quizId,
+             @Valid @RequestBody List<QuestionRequest> requests) {
         return quizService.createQuestions(quizId, requests);
     }
 }
