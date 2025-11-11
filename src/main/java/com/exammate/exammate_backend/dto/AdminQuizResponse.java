@@ -13,10 +13,11 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class QuizResponse {
+public class AdminQuizResponse {
     private UUID id;
     private String name;
     private Duration timeLimit;
     private int questionLimit;
     private Instant createdAt;
+    private AdminQuestionResponse[] questions;
 }

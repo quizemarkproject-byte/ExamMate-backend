@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.services.impl;
 
+import com.exammate.exammate_backend.dto.CountResponse;
 import com.exammate.exammate_backend.dto.QuizResultResponse;
 import com.exammate.exammate_backend.dto.QuizSessionStartRequest;
 import com.exammate.exammate_backend.dto.QuizSessionStartResponse;
@@ -191,8 +192,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public com.exammate.exammate_backend.dto.CountResponse countResultsForUser(String userId) {
+    public CountResponse countResultsForUser(String userId) {
         long count = resultRepository.countByUserId(userId);
-        return new com.exammate.exammate_backend.dto.CountResponse(count);
+        return new CountResponse(count);
     }
 }

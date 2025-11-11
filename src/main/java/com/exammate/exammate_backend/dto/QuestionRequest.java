@@ -1,7 +1,5 @@
 package com.exammate.exammate_backend.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class QuestionRequest {
     /** If present, attach this existing question (by id) to the quiz instead of creating a new one. */
-    private UUID existingQuestionId;
+    private UUID id;
 
     // When creating a new question these fields are required; service layer will validate accordingly
     private String text;

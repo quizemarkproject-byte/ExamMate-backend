@@ -3,11 +3,13 @@ package com.exammate.exammate_backend.config;
 import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.models.Question;
 import com.exammate.exammate_backend.repositories.QuizRepository;
+import com.exammate.exammate_backend.repositories.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -15,6 +17,7 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
         private final QuizRepository quizRepository;
+        private final QuestionRepository questionRepository;
 
         @Override
         public void run(String... args) {
@@ -154,16 +157,16 @@ public class DataInitializer implements CommandLineRunner {
                                                         .categories(List.of(technology))
                                                         .build());
 
-                        // Set questions
-                        general.setQuestions(generalQuestions);
-                        math.setQuestions(mathQuestions);
-                        science.setQuestions(scienceQuestions);
-                        history.setQuestions(historyQuestions);
-                        geography.setQuestions(geographyQuestions);
-                        technology.setQuestions(technologyQuestions);
+                        // Collect all questions and persist via QuestionRepository (Question is the owning side)
+                        List<Question> all = new ArrayList<>();
+                        all.addAll(generalQuestions);
+                        all.addAll(mathQuestions);
+                        all.addAll(scienceQuestions);
+                        all.addAll(historyQuestions);
+                        all.addAll(geographyQuestions);
+                        all.addAll(technologyQuestions);
 
-                        // Save all quizzes
-                        quizRepository.saveAll(List.of(general, math, science, history, geography, technology));
+                        questionRepository.saveAll(all);
                 }
         }
 
