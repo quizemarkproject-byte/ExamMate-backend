@@ -23,7 +23,7 @@ public class QuizRequest {
     private Long timeLimitMinutes;
 
     @NotNull
-    @Min(5)
+    @Min(2)
     private Integer questionLimit;
 }
 

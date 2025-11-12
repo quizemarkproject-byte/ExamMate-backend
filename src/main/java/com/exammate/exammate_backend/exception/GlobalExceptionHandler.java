@@ -1,7 +1,6 @@
 package com.exammate.exammate_backend.exception;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,7 +15,6 @@ import com.exammate.exammate_backend.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// Additional imports for persistence exceptions
 import jakarta.persistence.PersistenceException;
 import org.hibernate.exception.ConstraintViolationException;
 
@@ -56,10 +54,24 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public List<String> validationErrorsHandler(MethodArgumentNotValidException ex) {
-        List<String> errors = ex.getBindingResult().getFieldErrors()
-                .stream().map(FieldError::getDefaultMessage).collect(Collectors.toList());
-        return errors;
+    public ErrorResponse validationErrorsHandler(MethodArgumentNotValidException ex) {
+        var fieldErrors = ex.getBindingResult().getFieldErrors();
+        // Build messages of the form: "field defaultMessage" e.g. "questionLimit must be greater than or equal to 5"
+        String errors = fieldErrors
+                .stream()
+                .map(fe -> fe.getField() + " " + fe.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        String keys = fieldErrors
+                .stream()
+                .map(FieldError::getField)
+                .distinct()
+                .collect(Collectors.joining(","));
+        logger.warn("Validation failed: {} (fields={})", errors, keys);
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .error(errors.isEmpty() ? "Validation failed" : errors)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
