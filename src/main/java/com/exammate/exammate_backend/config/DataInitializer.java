@@ -26,32 +26,32 @@ public class DataInitializer implements CommandLineRunner {
                         Quiz general = new Quiz();
                         general.setName("General Knowledge");
                         general.setTimeLimit(Duration.ofMinutes(1));
-                        general.setQuestionLimit(5);
+                        general.setQuestionLimit(3);
 
                         Quiz math = new Quiz();
                         math.setName("Math");
                         math.setTimeLimit(Duration.ofMinutes(15));
-                        math.setQuestionLimit(7);
+                        math.setQuestionLimit(3);
 
                         Quiz science = new Quiz();
                         science.setName("Science");
                         science.setTimeLimit(Duration.ofMinutes(12));
-                        science.setQuestionLimit(6);
+                        science.setQuestionLimit(2);
 
                         Quiz history = new Quiz();
                         history.setName("History");
                         history.setTimeLimit(Duration.ofMinutes(10));
-                        history.setQuestionLimit(5);
+                        history.setQuestionLimit(2);
 
                         Quiz geography = new Quiz();
                         geography.setName("Geography");
                         geography.setTimeLimit(Duration.ofMinutes(10));
-                        geography.setQuestionLimit(5);
+                        geography.setQuestionLimit(2);
 
                         Quiz technology = new Quiz();
                         technology.setName("Technology");
                         technology.setTimeLimit(Duration.ofMinutes(8));
-                        technology.setQuestionLimit(4);
+                        technology.setQuestionLimit(2);
 
                         List<Question> generalQuestions = List.of(
                                         Question.builder()

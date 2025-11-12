@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,9 +27,14 @@ public class QuizServiceImpl implements QuizService {
 
     @Override
     public List<QuizResponse> getAllQuizzes() {
-        return quizRepository.findAllByOrderByCreatedAtDesc().stream()
-                .map(quiz -> modelMapper.map(quiz, QuizResponse.class))
-                .toList();
+        List<Quiz> quizzes = quizRepository.findAllByOrderByCreatedAtDesc();
+        List<QuizResponse> responses = new ArrayList<>();
+        for (Quiz quiz : quizzes) {
+            List<Question> questions = questionRepository.findByCategories_Id(quiz.getId()).orElse(List.of());
+            if (questions.isEmpty()) continue;
+            responses.add(modelMapper.map(quiz, QuizResponse.class));
+        }
+        return responses;
     }
 
     @Override

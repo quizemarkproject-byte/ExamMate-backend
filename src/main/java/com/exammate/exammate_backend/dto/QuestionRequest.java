@@ -13,13 +13,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuestionRequest {
-    /** If present, attach this existing question (by id) to the quiz instead of creating a new one. */
     private UUID id;
-
-    // When creating a new question these fields are required; service layer will validate accordingly
     private String text;
-
     private List<String> options;
-
     private String correctAnswer;
 }
