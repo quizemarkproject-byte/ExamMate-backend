@@ -61,7 +61,7 @@ public class AdminQuizController {
     public List<AdminQuestionResponse> createQuestionsInBulk(
             @Parameter(description = "UUID of the quiz", required = true)
             @PathVariable UUID quizId,
-            @Valid @RequestBody List<QuestionRequest> requests) {
+            @Valid @RequestBody List<@Valid QuestionRequest> requests) {
         return adminQuizService.createQuestions(quizId, requests);
     }
 
