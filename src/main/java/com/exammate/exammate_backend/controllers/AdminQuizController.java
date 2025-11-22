@@ -2,7 +2,6 @@ package com.exammate.exammate_backend.controllers;
 
 import com.exammate.exammate_backend.dto.AdminQuestionResponse;
 import com.exammate.exammate_backend.dto.AdminQuizResponse;
-import com.exammate.exammate_backend.dto.MessageResponse;
 import com.exammate.exammate_backend.dto.QuestionRequest;
 import com.exammate.exammate_backend.dto.QuizRequest;
 import com.exammate.exammate_backend.services.AdminQuizService;
@@ -45,14 +44,12 @@ public class AdminQuizController {
         return adminQuizService.createQuiz(request);
     }
 
-    @PostMapping("/{quizId}/questions")
+    @PostMapping("/questions")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Admin: Create a question", description = "Create a new question under the specified quiz")
+    @Operation(summary = "Admin: Create a question", description = "Create a new standalone question")
     public AdminQuestionResponse createQuestion(
-            @Parameter(description = "UUID of the quiz", required = true)
-            @PathVariable UUID quizId,
             @Valid @RequestBody QuestionRequest request) {
-        return adminQuizService.createQuestion(quizId, request);
+        return adminQuizService.createQuestion(request);
     }
 
     @PostMapping("/{quizId}/questions/bulk")
@@ -65,26 +62,36 @@ public class AdminQuizController {
         return adminQuizService.updateQuizQuestions(quizId, requests);
     }
 
-    @DeleteMapping("/{quizId}/questions/{questionId}")
+    @PutMapping("/questions/{questionId}")
     @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Admin: Update question", description = "Update an existing question and return the updated question")
+    public AdminQuestionResponse updateQuestion(
+            @Parameter(description = "UUID of the question", required = true) @PathVariable UUID questionId,
+            @Valid @RequestBody QuestionRequest request) {
+        return adminQuizService.updateQuestion(questionId, request);
+    }
+
+    // NOTE: not used currently
+    @DeleteMapping("/{quizId}/questions/{questionId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Admin: Detach question", description = "Remove a question's association with a quiz without deleting the question")
-    public MessageResponse detachQuestion(
+    public void detachQuestion(
             @Parameter(description = "UUID of the quiz", required = true) @PathVariable UUID quizId,
             @Parameter(description = "UUID of the question", required = true) @PathVariable UUID questionId) {
-        return adminQuizService.detachQuestionFromQuiz(quizId, questionId);
+        adminQuizService.detachQuestionFromQuiz(quizId, questionId);
     }
 
     @DeleteMapping("/{quizId}")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Admin: Delete quiz", description = "Delete a quiz and detach it from its questions")
-    public MessageResponse deleteQuiz(@Parameter(description = "UUID of the quiz", required = true) @PathVariable UUID quizId) {
-        return adminQuizService.deleteQuizSafely(quizId);
+    public void deleteQuiz(@Parameter(description = "UUID of the quiz", required = true) @PathVariable UUID quizId) {
+        adminQuizService.deleteQuizSafely(quizId);
     }
 
     @DeleteMapping("/questions/{questionId}")
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Admin: Delete question", description = "Delete a question and remove it from any quizzes")
-    public MessageResponse deleteQuestion(@Parameter(description = "UUID of the question", required = true) @PathVariable UUID questionId) {
-        return adminQuizService.deleteQuestionSafely(questionId);
+    public void deleteQuestion(@Parameter(description = "UUID of the question", required = true) @PathVariable UUID questionId) {
+        adminQuizService.deleteQuestionSafely(questionId);
     }
 }

@@ -1,6 +1,9 @@
 package com.exammate.exammate_backend.services.impl;
 
-import com.exammate.exammate_backend.dto.*;
+import com.exammate.exammate_backend.dto.AdminQuestionResponse;
+import com.exammate.exammate_backend.dto.AdminQuizResponse;
+import com.exammate.exammate_backend.dto.QuestionRequest;
+import com.exammate.exammate_backend.dto.QuizRequest;
 import com.exammate.exammate_backend.exception.BadRequestException;
 import com.exammate.exammate_backend.exception.NotFoundException;
 import com.exammate.exammate_backend.models.Question;
@@ -15,9 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -74,44 +75,34 @@ public class AdminQuizServiceImpl implements AdminQuizService {
         return modelMapper.map(saved, AdminQuizResponse.class);
     }
 
-    // ───────────────────────────────
-    // SINGLE QUESTION CREATE / UPDATE
-    // ───────────────────────────────
     @Override
-    public AdminQuestionResponse createQuestion(UUID quizId, QuestionRequest request) {
-        Quiz quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+    public AdminQuestionResponse createQuestion(QuestionRequest request) {
+        Question question = Question.builder()
+                .text(request.getText())
+                .options(request.getOptions())
+                .correctAnswer(request.getCorrectAnswer())
+                .categories(new ArrayList<>())
+                .build();
+        Question saved = questionRepository.save(question);
+        return modelMapper.map(saved, AdminQuestionResponse.class);
+    }
 
-        Question question;
+    @Override
+    public AdminQuestionResponse updateQuestion(UUID questionId, QuestionRequest request) {
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new NotFoundException("Question not found"));
 
-        if (request.getId() != null) {
-            // Existing question (PUT-style overwrite)
-            question = questionRepository.findById(request.getId())
-                    .orElseThrow(() -> new BadRequestException("Question not found"));
-            question.setText(request.getText());
-            question.setOptions(request.getOptions());
-            question.setCorrectAnswer(request.getCorrectAnswer());
-        } else {
-            // New question
-            question = new Question();
-            question.setText(request.getText());
-            question.setOptions(request.getOptions());
-            question.setCorrectAnswer(request.getCorrectAnswer());
-        }
+        // Update fields
+        question.setText(request.getText());
+        question.setOptions(request.getOptions());
+        question.setCorrectAnswer(request.getCorrectAnswer());
 
-        // Attach quiz if not already linked
-        List<Quiz> categories = question.getCategories();
-        if (categories == null) categories = new ArrayList<>();
-        if (!categories.contains(quiz)) {
-            categories.add(quiz);
-            question.setCategories(categories);
-        }
+        // Ensure categories list exists (do not modify associations here)
+        List<Quiz> cats = question.getCategories();
+        if (cats == null) question.setCategories(new ArrayList<>());
 
-        // Only save if new (Hibernate auto-flush handles existing)
-        Question saved = (question.getId() == null)
-                ? questionRepository.save(question)
-                : question;
-
+        // Save and return
+        Question saved = questionRepository.save(question);
         return modelMapper.map(saved, AdminQuestionResponse.class);
     }
 
@@ -208,7 +199,7 @@ public class AdminQuizServiceImpl implements AdminQuizService {
     // DETACH & DELETE OPERATIONS
     // ───────────────────────────────
     @Override
-    public MessageResponse detachQuestionFromQuiz(UUID quizId, UUID questionId) {
+    public void detachQuestionFromQuiz(UUID quizId, UUID questionId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new NotFoundException("Quiz not found"));
         Question question = questionRepository.findById(questionId)
@@ -218,14 +209,11 @@ public class AdminQuizServiceImpl implements AdminQuizService {
         if (cats != null && cats.removeIf(q -> q.getId().equals(quiz.getId()))) {
             question.setCategories(cats);
             // Hibernate auto-flush will persist this change
-            return new MessageResponse("Question detached from quiz");
         }
-
-        return new MessageResponse("Question was not attached to the quiz");
     }
 
     @Override
-    public MessageResponse deleteQuizSafely(UUID quizId) {
+    public void deleteQuizSafely(UUID quizId) {
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
@@ -239,11 +227,10 @@ public class AdminQuizServiceImpl implements AdminQuizService {
 
         // No need for manual saveAll — @Transactional auto flushes before delete
         quizRepository.delete(quiz);
-        return new MessageResponse("Quiz deleted");
     }
 
     @Override
-    public MessageResponse deleteQuestionSafely(UUID questionId) {
+    public void deleteQuestionSafely(UUID questionId) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new NotFoundException("Question not found"));
 
@@ -254,6 +241,5 @@ public class AdminQuizServiceImpl implements AdminQuizService {
         }
 
         questionRepository.delete(question);
-        return new MessageResponse("Question deleted");
     }
 }
