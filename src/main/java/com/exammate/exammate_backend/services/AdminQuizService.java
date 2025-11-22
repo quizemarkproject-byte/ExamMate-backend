@@ -14,7 +14,7 @@ public interface AdminQuizService {
     List<AdminQuestionResponse> getAllQuestions();
     AdminQuizResponse createQuiz(QuizRequest request);
     AdminQuestionResponse createQuestion(UUID quizId, QuestionRequest request);
-    List<AdminQuestionResponse> createQuestions(UUID quizId, List<QuestionRequest> requests);
+    List<AdminQuestionResponse> updateQuizQuestions(UUID quizId, List<QuestionRequest> requests);
     MessageResponse detachQuestionFromQuiz(UUID quizId, UUID questionId);
     MessageResponse deleteQuizSafely(UUID quizId);
     MessageResponse deleteQuestionSafely(UUID questionId);

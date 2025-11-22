@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +39,9 @@ public class Question {
 
     private String correctAnswer;
 
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
+
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "quiz_question",
@@ -46,4 +50,9 @@ public class Question {
     )
     @JsonIgnore
     private List<Quiz> categories;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) this.createdAt = Instant.now();
+    }
 }

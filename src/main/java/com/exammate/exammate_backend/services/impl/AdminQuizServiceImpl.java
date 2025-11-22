@@ -15,8 +15,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +54,7 @@ public class AdminQuizServiceImpl implements AdminQuizService {
 
     @Override
     public List<AdminQuestionResponse> getAllQuestions() {
-        return questionRepository.findAll().stream()
+        return questionRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(q -> modelMapper.map(q, AdminQuestionResponse.class))
                 .toList();
     }
@@ -114,52 +119,88 @@ public class AdminQuizServiceImpl implements AdminQuizService {
     // BULK QUESTION CREATE / UPDATE
     // ───────────────────────────────
     @Override
-    public List<AdminQuestionResponse> createQuestions(UUID quizId, List<QuestionRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
-            throw new BadRequestException("Question requests cannot be empty");
-        }
+    public List<AdminQuestionResponse> updateQuizQuestions(UUID quizId, List<QuestionRequest> requests) {
+
+        if (requests == null)
+            throw new BadRequestException("Requests cannot be null");
 
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
-        List<Question> newQuestions = new ArrayList<>();
-        List<Question> resultList = new ArrayList<>();
+        List<Question> current = questionRepository.findByCategories_Id(quizId).orElse(List.of());
+
+        // Build desired final state
+        List<Question> desired = buildDesiredQuestions(requests, quiz);
+
+        // Persist desired questions
+        questionRepository.saveAll(desired);
+
+        // Remove associations missing from request
+        removeMissingAssociations(quiz, current, desired);
+
+        // Return final state
+        List<Question> finalList = questionRepository.findByCategories_Id(quizId).orElse(List.of());
+        return finalList.stream()
+                .map(q -> modelMapper.map(q, AdminQuestionResponse.class))
+                .toList();
+    }
+
+    private void removeMissingAssociations(
+            Quiz quiz,
+            List<Question> current,
+            List<Question> desired
+    ) {
+        Set<UUID> desiredIds = desired.stream()
+                .map(Question::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (Question q : current) {
+            if (!desiredIds.contains(q.getId())) {
+                List<Quiz> cats = q.getCategories();
+                if (cats != null) {
+                    boolean removed = cats.removeIf(c -> c.getId().equals(quiz.getId()));
+                    if (removed) {
+                        q.setCategories(cats);
+                        questionRepository.save(q);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<Question> buildDesiredQuestions(List<QuestionRequest> requests, Quiz quiz) {
+        List<Question> result = new ArrayList<>();
 
         for (QuestionRequest r : requests) {
             Question q;
 
             if (r.getId() != null) {
                 q = questionRepository.findById(r.getId())
-                        .orElseThrow(() -> new BadRequestException("Question with id " + r.getId() + " not found"));
-                q.setText(r.getText());
-                q.setOptions(r.getOptions());
-                q.setCorrectAnswer(r.getCorrectAnswer());
+                        .orElseThrow(() -> new NotFoundException("Question not found: " + r.getId()));
             } else {
                 q = new Question();
-                q.setText(r.getText());
-                q.setOptions(r.getOptions());
-                q.setCorrectAnswer(r.getCorrectAnswer());
-                newQuestions.add(q);
             }
 
-            // Attach quiz
+            q.setText(r.getText());
+            q.setOptions(r.getOptions());
+            q.setCorrectAnswer(r.getCorrectAnswer());
+
+            // Always ensure association
             List<Quiz> cats = q.getCategories();
-            if (cats == null) cats = new ArrayList<>();
-            if (!cats.contains(quiz)) cats.add(quiz);
+            if (cats == null) {
+                cats = new ArrayList<>();
+            }
+            boolean already = cats.stream().anyMatch(c -> c.getId() != null && c.getId().equals(quiz.getId()));
+            if (!already) {
+                cats.add(quiz);
+            }
             q.setCategories(cats);
 
-            resultList.add(q);
+            result.add(q);
         }
 
-        // Only save newly created questions
-        if (!newQuestions.isEmpty()) {
-            questionRepository.saveAll(newQuestions);
-        }
-
-        // Hibernate auto-flushes updates for existing ones
-        return resultList.stream()
-                .map(q -> modelMapper.map(q, AdminQuestionResponse.class))
-                .toList();
+        return result;
     }
 
 

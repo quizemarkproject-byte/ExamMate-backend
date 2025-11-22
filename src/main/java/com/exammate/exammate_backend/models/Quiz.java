@@ -33,7 +33,6 @@ public class Quiz {
     private Duration timeLimit = Duration.ofMinutes(30);
     private int questionLimit;
 
-    // Timestamp for ordering by latest
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -41,6 +40,4 @@ public class Quiz {
     public void prePersist() {
         if (this.createdAt == null) this.createdAt = Instant.now();
     }
-
-    // Removed questions collection; Question.categories is the owning side now
 }

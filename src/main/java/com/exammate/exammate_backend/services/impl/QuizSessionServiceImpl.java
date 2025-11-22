@@ -90,7 +90,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     @Override
     public QuizResultResponse submitSession(QuizSessionSubmissionRequest request) {
         QuizSession session = sessionRepository.findById(request.getSessionId())
-                .orElseThrow(() -> new NotFoundException("Session not found"));
+                .orElseThrow(() -> new NotFoundException("Session has ended"));
         if (session.isExpired()) {
             throw new BadRequestException("This session has already been submitted.");
         }

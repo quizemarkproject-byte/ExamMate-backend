@@ -62,7 +62,7 @@ public class AdminQuizController {
             @Parameter(description = "UUID of the quiz", required = true)
             @PathVariable UUID quizId,
             @Valid @RequestBody List<@Valid QuestionRequest> requests) {
-        return adminQuizService.createQuestions(quizId, requests);
+        return adminQuizService.updateQuizQuestions(quizId, requests);
     }
 
     @DeleteMapping("/{quizId}/questions/{questionId}")
