@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.exammate.exammate_backend.dto.ErrorResponse;
 import org.slf4j.Logger;
@@ -70,6 +71,29 @@ public class GlobalExceptionHandler {
         return ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .error(errors.isEmpty() ? "Validation failed" : errors)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
+
+    // New handler for type mismatches (e.g. invalid UUID in path variable)
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String name = ex.getName();
+        Object valueObj = ex.getValue();
+        String value = valueObj == null ? "null" : String.valueOf(valueObj);
+        Class<?> required = ex.getRequiredType();
+
+        String msg;
+        if (java.util.UUID.class.equals(required)) {
+            msg = String.format("Invalid %s: '%s' is not a valid UUID", name, value);
+        } else {
+            msg = String.format("Invalid value for parameter '%s': '%s'", name, value);
+        }
+        logger.warn("Type mismatch for parameter {}: requiredType={}, value={}", name, required, value);
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .error(msg)
                 .status(HttpStatus.BAD_REQUEST.value())
                 .build();
     }

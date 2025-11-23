@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/analytics")
+@RequestMapping("/user/analytics")
 @RequiredArgsConstructor
 public class UserAnalyticsController {
     private final AnalyticsService analyticsService;

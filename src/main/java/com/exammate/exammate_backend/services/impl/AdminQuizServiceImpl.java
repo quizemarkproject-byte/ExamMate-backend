@@ -20,14 +20,19 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AdminQuizServiceImpl implements AdminQuizService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminQuizServiceImpl.class);
 
     private final QuizRepository quizRepository;
     private final QuestionRepository questionRepository;
@@ -62,12 +67,15 @@ public class AdminQuizServiceImpl implements AdminQuizService {
 
     @Override
     public AdminQuizResponse createQuiz(QuizRequest request) {
-        if (quizRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Quiz with the same name already exists");
+        // Use raw incoming name (no trim/no blank check)
+        String incomingName = request.getName();
+
+        if (quizRepository.existsByNameIgnoreCase(incomingName)) {
+            throw new BadRequestException("Quiz with the same name already exists");
         }
 
         Quiz quiz = new Quiz();
-        quiz.setName(request.getName());
+        quiz.setName(incomingName);
         quiz.setTimeLimit(Duration.ofMinutes(request.getTimeLimitMinutes()));
         quiz.setQuestionLimit(request.getQuestionLimit());
 
@@ -241,5 +249,42 @@ public class AdminQuizServiceImpl implements AdminQuizService {
         }
 
         questionRepository.delete(question);
+    }
+
+    @Override
+    public AdminQuizResponse updateQuiz(UUID quizId, QuizRequest request) {
+        Quiz quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+
+        // Use raw incoming name (no trim/no blank check)
+        String incomingName = request.getName();
+
+        // If incoming name equals the current name ignoring case, allow update without DB duplicate checks
+        String currentName = quiz.getName() == null ? "" : quiz.getName();
+        if (!currentName.equalsIgnoreCase(incomingName)) {
+            // Check for an existing quiz with the same name (case-insensitive)
+            Optional<Quiz> existing = quizRepository.findByNameIgnoreCase(incomingName);
+            if (existing.isPresent() && !existing.get().getId().equals(quiz.getId())) {
+                String msg = String.format("Quiz with the same name already exists (incoming='%s', current='%s', conflictingId=%s)", incomingName, currentName, existing.get().getId());
+                log.warn(msg);
+                throw new BadRequestException("Quiz with the same name already exists");
+            }
+        }
+
+        // Safe to update
+        quiz.setName(incomingName);
+        quiz.setTimeLimit(Duration.ofMinutes(request.getTimeLimitMinutes()));
+        quiz.setQuestionLimit(request.getQuestionLimit());
+
+        Quiz saved = quizRepository.save(quiz);
+
+        AdminQuizResponse resp = modelMapper.map(saved, AdminQuizResponse.class);
+        List<Question> questions = questionRepository.findByCategories_Id(saved.getId()).orElse(List.of());
+        AdminQuestionResponse[] arr = questions.stream()
+                .map(q -> modelMapper.map(q, AdminQuestionResponse.class))
+                .toArray(AdminQuestionResponse[]::new);
+        resp.setQuestions(arr);
+
+        return resp;
     }
 }

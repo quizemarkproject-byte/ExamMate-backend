@@ -1,0 +1,22 @@
+package com.exammate.exammate_backend.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class AdminUserResponse {
+    private UUID id;
+    private String email;
+    private String fullName;
+    private String username;
+    private String role;
+    private boolean enabled;
+}
+

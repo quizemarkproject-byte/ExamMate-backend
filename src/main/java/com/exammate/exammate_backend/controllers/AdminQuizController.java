@@ -71,6 +71,16 @@ public class AdminQuizController {
         return adminQuizService.updateQuestion(questionId, request);
     }
 
+    // New: Admin endpoint to update an existing quiz
+    @PutMapping("/{quizId}")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Admin: Update quiz", description = "Update an existing quiz and return the updated quiz")
+    public AdminQuizResponse editQuiz(
+            @Parameter(description = "UUID of the quiz", required = true) @PathVariable UUID quizId,
+            @Valid @RequestBody QuizRequest request) {
+        return adminQuizService.updateQuiz(quizId, request);
+    }
+
     // NOTE: not used currently
     @DeleteMapping("/{quizId}/questions/{questionId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

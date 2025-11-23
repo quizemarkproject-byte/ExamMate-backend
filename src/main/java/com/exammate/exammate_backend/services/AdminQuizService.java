@@ -18,4 +18,5 @@ public interface AdminQuizService {
     void detachQuestionFromQuiz(UUID quizId, UUID questionId);
     void deleteQuizSafely(UUID quizId);
     void deleteQuestionSafely(UUID questionId);
+    AdminQuizResponse updateQuiz(UUID quizId, QuizRequest request);
 }
