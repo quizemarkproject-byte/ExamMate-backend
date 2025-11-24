@@ -1,11 +1,10 @@
 package com.exammate.exammate_backend.services;
 
-import com.exammate.exammate_backend.dto.QuizAnalyticsResponse;
-import com.exammate.exammate_backend.dto.UserAnalyticsResponse;
+import com.exammate.exammate_backend.dto.AnalyticsResponse;
 
 import java.util.UUID;
 
 public interface AnalyticsService {
-    QuizAnalyticsResponse quizAnalytics(UUID quizId);
-    UserAnalyticsResponse userAnalytics(String userId);
+    AnalyticsResponse quizAnalytics(UUID quizId);
+    AnalyticsResponse userAnalytics(String userId);
 }

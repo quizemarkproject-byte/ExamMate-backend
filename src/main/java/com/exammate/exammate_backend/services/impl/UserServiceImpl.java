@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<AdminUserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+        return userRepository.findAllByRole(Role.USER).stream()
                 .map(u -> modelMapper.map(u, AdminUserResponse.class))
                 .collect(Collectors.toList());
     }

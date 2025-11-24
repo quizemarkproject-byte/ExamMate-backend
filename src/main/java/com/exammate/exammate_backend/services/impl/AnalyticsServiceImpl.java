@@ -1,7 +1,6 @@
 package com.exammate.exammate_backend.services.impl;
 
-import com.exammate.exammate_backend.dto.QuizAnalyticsResponse;
-import com.exammate.exammate_backend.dto.UserAnalyticsResponse;
+import com.exammate.exammate_backend.dto.AnalyticsResponse;
 import com.exammate.exammate_backend.exception.NotFoundException;
 import com.exammate.exammate_backend.models.QuizResult;
 import com.exammate.exammate_backend.repositories.QuizRepository;
@@ -22,7 +21,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final QuizResultRepository resultRepository;
 
     @Override
-    public QuizAnalyticsResponse quizAnalytics(UUID quizId) {
+    public AnalyticsResponse quizAnalytics(UUID quizId) {
         // verify quiz exists
         quizRepository.findById(quizId).orElseThrow(() -> new NotFoundException("Quiz not found"));
 
@@ -35,24 +34,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
 
     @Override
-    public UserAnalyticsResponse userAnalytics(String userId) {
+    public AnalyticsResponse userAnalytics(String userId) {
         // find results by user id
         List<QuizResult> allResults = resultRepository.findByUserId(userId);
         if (allResults == null) allResults = List.of();
 
-        // build same stats but return UserAnalyticsResponse
-        var qa = buildQuizAnalytics(allResults);
-        UserAnalyticsResponse resp = UserAnalyticsResponse.builder()
-                .totalAttempts(qa.getTotalAttempts())
-                .averageScore(qa.getAverageScore())
-                .medianScore(qa.getMedianScore())
-                .scoreDistribution(qa.getScoreDistribution())
-                .attemptsByDay(qa.getAttemptsByDay())
-                .build();
-        return resp;
+        // build same stats
+        return buildQuizAnalytics(allResults);
     }
 
-    private QuizAnalyticsResponse buildQuizAnalytics(List<QuizResult> allResults) {
+    private AnalyticsResponse buildQuizAnalytics(List<QuizResult> allResults) {
         long total = allResults.size();
         List<Double> percents = allResults.stream()
                 .map(r -> {
@@ -84,7 +75,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         Map<String, Long> byDay = allResults.stream()
                 .collect(Collectors.groupingBy(r -> r.getCompletedAt().toLocalDate().format(fmt), Collectors.counting()));
 
-        return QuizAnalyticsResponse.builder()
+        return AnalyticsResponse.builder()
                 .totalAttempts(total)
                 .averageScore(round2(avg))
                 .medianScore(round2(median))

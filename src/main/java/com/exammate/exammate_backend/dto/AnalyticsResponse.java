@@ -11,7 +11,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuizAnalyticsResponse {
+public class AnalyticsResponse {
     private long totalAttempts;
     private double averageScore; // percent
     private double medianScore; // percent
