@@ -173,7 +173,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public List<QuizResultResponse> getAllResultsForUser(String userId) {
+    public List<QuizResultResponse> getAllResultsForUser(UUID userId) {
         List<QuizResult> quizResults = resultRepository.findByUserId(userId);
         if (quizResults.isEmpty()) {
             return Collections.emptyList();
@@ -185,14 +185,14 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public QuizResultResponse getResultById(UUID resultId, String userId) {
+    public QuizResultResponse getResultById(UUID resultId, UUID userId) {
         QuizResult result = resultRepository.findByIdAndQuizSessionUserId(resultId, userId)
                 .orElseThrow(() -> new NotFoundException("Result not found"));
         return mapResultToDto(result);
     }
 
     @Override
-    public CountResponse countResultsForUser(String userId) {
+    public CountResponse countResultsForUser(UUID userId) {
         long count = resultRepository.countByUserId(userId);
         return new CountResponse(count);
     }

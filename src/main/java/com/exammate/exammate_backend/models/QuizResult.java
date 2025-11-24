@@ -35,7 +35,7 @@ public class QuizResult {
     @JoinColumn(name = "quiz_session_id")
     private QuizSession quizSession;
 
-    private String userId;
+    private UUID userId;
     private int score;
     private int totalQuestions;
     @Builder.Default

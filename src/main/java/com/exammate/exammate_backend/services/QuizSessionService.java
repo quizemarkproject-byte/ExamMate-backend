@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface QuizSessionService {
     QuizSessionStartResponse startSession(QuizSessionStartRequest request);
     QuizResultResponse submitSession(QuizSessionSubmissionRequest request);
-    List<QuizResultResponse> getAllResultsForUser(String userId);
-    QuizResultResponse getResultById(UUID resultId, String userId);
-    CountResponse countResultsForUser(String userId);
+    List<QuizResultResponse> getAllResultsForUser(UUID userId);
+    QuizResultResponse getResultById(UUID resultId, UUID userId);
+    CountResponse countResultsForUser(UUID userId);
 }

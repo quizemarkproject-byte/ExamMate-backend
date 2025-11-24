@@ -6,5 +6,6 @@ import java.util.UUID;
 
 public interface AnalyticsService {
     AnalyticsResponse quizAnalytics(UUID quizId);
-    AnalyticsResponse userAnalytics(String userId);
+    AnalyticsResponse userAnalytics(UUID userId);
+    AnalyticsResponse userAnalyticsByQuiz(UUID userId, UUID quizId);
 }

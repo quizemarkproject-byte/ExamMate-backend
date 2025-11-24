@@ -13,5 +13,5 @@ import java.util.UUID;
 @Builder
 public class QuizSessionStartRequest {
     private UUID quizId;
-    private String userId;
+    private UUID userId;
 }

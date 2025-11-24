@@ -36,7 +36,7 @@ public class QuizSession {
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
-    private String userId;
+    private UUID userId;
     @Builder.Default
     private Instant startedAt = Instant.now();
     private boolean expired;

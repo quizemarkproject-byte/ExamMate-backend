@@ -25,7 +25,7 @@ public class AdminAnalyticsController {
     @GetMapping("/users/{userId}")
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get user analytics (JSON)")
-    public AnalyticsResponse getUserAnalytics(@PathVariable String userId) {
+    public AnalyticsResponse getUserAnalytics(@PathVariable UUID userId) {
         return analyticsService.userAnalytics(userId);
     }
 }

@@ -34,12 +34,27 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
 
     @Override
-    public AnalyticsResponse userAnalytics(String userId) {
+    public AnalyticsResponse userAnalytics(UUID userId) {
         // find results by user id
         List<QuizResult> allResults = resultRepository.findByUserId(userId);
         if (allResults == null) allResults = List.of();
 
         // build same stats
+        return buildQuizAnalytics(allResults);
+    }
+
+    @Override
+    public AnalyticsResponse userAnalyticsByQuiz(UUID userId, UUID quizId) {
+        // verify quiz exists
+        quizRepository.findById(quizId).orElseThrow(() -> new NotFoundException("Quiz not found"));
+
+        // find results by user id and filter by quiz id through quiz session
+        List<QuizResult> allResults = resultRepository.findByUserId(userId).stream()
+                .filter(r -> r.getQuizSession() != null 
+                        && r.getQuizSession().getQuiz() != null 
+                        && r.getQuizSession().getQuiz().getId().equals(quizId))
+                .toList();
+
         return buildQuizAnalytics(allResults);
     }
 

@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class QuizResultResponse {
     private UUID id;
-    private String userId;
+    private UUID userId;
     private int score;
     private int totalQuestions;
     private String quizTitle;
