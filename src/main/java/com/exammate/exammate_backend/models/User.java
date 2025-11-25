@@ -44,7 +44,6 @@ public class User implements UserDetails {
     @Builder.Default
     private String username = "";
 
-    @Column(name = "password", nullable = false)
     @Builder.Default
     private String password = "";
 

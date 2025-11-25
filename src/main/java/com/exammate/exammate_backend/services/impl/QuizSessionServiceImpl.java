@@ -49,11 +49,8 @@ public class QuizSessionServiceImpl implements QuizSessionService {
         QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(),
                 quiz.getId());
         if (inProgress != null) {
-            System.out.println("Resuming existing session: " + inProgress.getId() + inProgress.getStartedAt());
             return mapSessionToStartResponse(inProgress);
         }
-
-        System.out.println("Creating new session for user: " + request.getUserId() + " in quiz: " + quiz.getName());
 
         List<Question> allQuestions = questionRepository.findByCategories_Id(request.getQuizId()).orElse(List.of());
         Collections.shuffle(allQuestions);

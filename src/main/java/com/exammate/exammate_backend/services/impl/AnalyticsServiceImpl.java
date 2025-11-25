@@ -75,14 +75,28 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             median = (percents.size() % 2 == 1) ? percents.get(m) : (percents.get(m - 1) + percents.get(m)) / 2.0;
         }
 
-        // distribution buckets 0-10,10-20,...90-100
+        // distribution buckets 0-9, 10-19, 20-29, ..., 90-100 (non-overlapping)
+        // Uses [low, high) for most buckets and [90, 100] for the last bucket
         Map<String, Long> distribution = new LinkedHashMap<>();
         for (int i = 0; i < 10; i++) {
             int low = i * 10;
-            int high = (i + 1) * 10;
-            String key = low + "-" + high;
-            final int lowF = low, highF = high;
-            long count = percents.stream().filter(p -> p >= lowF && p <= highF).count();
+            int high = low + 9;
+            final double lowF = low;
+            final double highF = (i + 1) * 10.0; // exclusive upper bound
+            final boolean isLastBucket = (i == 9);
+            
+            String key;
+            long count;
+            if (isLastBucket) {
+                // Last bucket "90-100": includes scores from 90.0 to 100.0 (inclusive)
+                key = low + "-100";
+                count = percents.stream().filter(p -> p >= lowF && p <= 100.0).count();
+            } else {
+                // Other buckets "0-9", "10-19", etc.: includes scores >= low and < high
+                // e.g., "0-9" includes 0.0 to 9.999..., "10-19" includes 10.0 to 19.999...
+                key = low + "-" + high;
+                count = percents.stream().filter(p -> p >= lowF && p < highF).count();
+            }
             distribution.put(key, count);
         }
 
