@@ -1,8 +1,11 @@
 package com.exammate.exammate_backend.services.impl;
 
 import com.exammate.exammate_backend.dto.AnalyticsResponse;
+import com.exammate.exammate_backend.dto.QuestionStat;
 import com.exammate.exammate_backend.exception.NotFoundException;
 import com.exammate.exammate_backend.models.QuizResult;
+import com.exammate.exammate_backend.models.QuizAnswer;
+import com.exammate.exammate_backend.models.Question;
 import com.exammate.exammate_backend.repositories.QuizRepository;
 import com.exammate.exammate_backend.repositories.QuizResultRepository;
 import com.exammate.exammate_backend.services.AnalyticsService;
@@ -104,13 +107,53 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         Map<String, Long> byDay = allResults.stream()
                 .collect(Collectors.groupingBy(r -> r.getCompletedAt().toLocalDate().format(fmt), Collectors.counting()));
 
+        // Build per-question stats
+        Map<UUID, QuestionAggregate> map = new HashMap<>();
+        for (QuizResult result : allResults) {
+            if (result.getAnswers() == null) continue;
+            for (QuizAnswer ans : result.getAnswers()) {
+                if (ans.getQuestion() == null) continue;
+                UUID qid = ans.getQuestion().getId();
+                QuestionAggregate agg = map.get(qid);
+                if (agg == null) {
+                    String text = ans.getQuestion().getText();
+                    agg = new QuestionAggregate(qid, text);
+                    map.put(qid, agg);
+                }
+                agg.total++;
+                if (ans.isCorrect()) agg.correct++;
+            }
+        }
+
+        List<QuestionStat> questionStats = map.values().stream()
+                .map(a -> QuestionStat.builder()
+                        .id(a.id)
+                        .text(a.text)
+                        .pctCorrect(round2(a.total == 0 ? 0.0 : ((double) a.correct) / a.total))
+                        .build())
+                .sorted(Comparator.comparingDouble(QuestionStat::getPctCorrect)) // hardest first
+                .toList();
+
         return AnalyticsResponse.builder()
                 .totalAttempts(total)
                 .averageScore(round2(avg))
                 .medianScore(round2(median))
                 .scoreDistribution(distribution)
                 .attemptsByDay(byDay)
+                .questionStats(questionStats)
                 .build();
+    }
+
+    private static final class QuestionAggregate {
+        UUID id;
+        String text;
+        long total = 0;
+        long correct = 0;
+
+        QuestionAggregate(UUID id, String text) {
+            this.id = id;
+            this.text = text;
+        }
     }
 
     private double round2(double v) {

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,5 +18,5 @@ public class AnalyticsResponse {
     private double medianScore; // percent
     private Map<String, Long> scoreDistribution; // e.g. "0-10": 3
     private Map<String, Long> attemptsByDay; // yyyy-MM-dd -> count
+    private List<QuestionStat> questionStats; // per-question difficulty, hardest first
 }
-
