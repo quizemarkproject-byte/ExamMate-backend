@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Analytics Demo (Chart.js)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; background:#fafafa }
+    .controls { margin-bottom: 16px; }
+    .kpi { display:inline-block; width:180px; padding:12px; margin:8px; background:#fff; border-radius:6px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.06) }
+    .kpi .big { font-size:20px; font-weight:700; }
+    .grid { display:flex; gap:24px; flex-wrap:wrap; }
+    canvas { background:white; border:1px solid #eee; border-radius:4px; }
+    label { margin-right:8px }
+    input[type=text] { padding:6px 8px; }
+    button { padding:8px 12px; }
+  </style>
+</head>
+<body>
+  <h2>Analytics demo</h2>
+  <div class="controls">
+    <label><input type="radio" name="mode" value="quiz" checked> Quiz analytics</label>
+    <label><input type="radio" name="mode" value="user"> User analytics</label>
+    <input id="idInput" type="text" placeholder="Enter quizId or userId" size="40" />
+    <button id="loadBtn">Load</button>
+    <button id="mockBtn">Load mock</button>
+  </div>
+
+  <div id="kpis" class="grid">
+    <div class="kpi">
+      <div>Total attempts</div>
+      <div id="totalAttempts" class="big">—</div>
+      <canvas id="sparkline" width="200" height="40"></canvas>
+    </div>
+
+    <div class="kpi">
+      <div>Average</div>
+      <div id="avgScore" class="big">—</div>
+    </div>
+
+    <div class="kpi">
+      <div>Median</div>
+      <div id="medianScore" class="big">—</div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:18px;">
+    <div style="flex:1 1 480px;">
+      <h3>Attempts by day</h3>
+      <canvas id="attemptsChart" width="700" height="300"></canvas>
+    </div>
+
+    <div style="flex:1 1 480px;">
+      <h3>Score distribution</h3>
+      <canvas id="distributionChart" width="700" height="300"></canvas>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <h3>Per-question difficulty (hardest first)</h3>
+    <canvas id="questionChart" width="1100" height="400"></canvas>
+  </div>
+
+<script>
+(function() {
+  // Chart instances
+  let sparkChart, attemptsChart, distributionChart, questionChart;
+
+  const ensureBuckets = (map) => {
+    const labels = [];
+    const data = [];
+    for (let i = 0; i < 10; i++) {
+      const key = `${i*10}-${(i+1)*10}`;
+      labels.push(key);
+      data.push(map && map[key] ? map[key] : 0);
+    }
+    return { labels, data };
+  };
+
+  const sortedTimeSeries = (map) => {
+    const entries = Object.entries(map || {});
+    if (entries.length === 0) return { labels:[], data:[] };
+    entries.sort((a,b) => new Date(a[0]) - new Date(b[0]));
+    return { labels: entries.map(e=>e[0]), data: entries.map(e=>e[1]) };
+  };
+
+  const updateKpis = (data) => {
+    document.getElementById('totalAttempts').textContent = data.totalAttempts ?? 0;
+    document.getElementById('avgScore').textContent = (data.averageScore ?? 0).toFixed(1) + '%';
+    document.getElementById('medianScore').textContent = (data.medianScore ?? 0).toFixed(1) + '%';
+  };
+
+  const renderSpark = (labels,data) => {
+    const ctx = document.getElementById('sparkline').getContext('2d');
+    if (sparkChart) sparkChart.destroy();
+    sparkChart = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ data, borderColor:'#4285F4', backgroundColor:'rgba(66,133,244,0.08)', tension:0.3, pointRadius:0 }]}, options:{ plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:false}}, elements:{line:{borderWidth:2}} } });
+  };
+
+  const renderAttempts = (labels,data) => {
+    const ctx = document.getElementById('attemptsChart').getContext('2d');
+    if (attemptsChart) attemptsChart.destroy();
+    attemptsChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets:[{ label:'Attempts', data, borderColor:'#2ca02c', backgroundColor:'rgba(44,160,44,0.1)', fill:true, tension:0.3, pointRadius:4 }]},
+      options: { responsive:true, plugins:{ title:{display:true, text:'Attempts by day'} }, scales:{ x:{ title:{display:true,text:'Date'}}, y:{ title:{display:true,text:'Attempts'}, beginAtZero:true } } }
+    });
+  };
+
+  const renderDistribution = (labels,data, avg, median) => {
+    const ctx = document.getElementById('distributionChart').getContext('2d');
+    if (distributionChart) distributionChart.destroy();
+    const cfg = { type:'bar', data: { labels, datasets:[ { label:'Attempts', data, backgroundColor:'rgba(66,133,244,0.9)' } ] }, options: { responsive:true, plugins:{ title:{display:true, text:'Score distribution'}, tooltip:{ callbacks:{ label: (ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y}` } } }, scales:{ y:{ beginAtZero:true, title:{display:true,text:'Count'} }, x:{ title:{display:true,text:'Score range (%)'} } } } };
+    if (avg != null) cfg.data.datasets.push({ type:'line', label:'Average', data: labels.map(()=>avg), borderColor:'#d9534f', borderWidth:2, pointRadius:0, borderDash:[6,4] });
+    if (median != null) cfg.data.datasets.push({ type:'line', label:'Median', data: labels.map(()=>median), borderColor:'#f0ad4e', borderWidth:2, pointRadius:0, borderDash:[2,4] });
+    distributionChart = new Chart(ctx, cfg);
+  };
+
+  const renderQuestions = (qStats) => {
+    const ctx = document.getElementById('questionChart').getContext('2d');
+    if (questionChart) questionChart.destroy();
+    const stats = (qStats||[]).slice().sort((a,b)=>(a.pctCorrect||a.pct||0)-(b.pctCorrect||b.pct||0)).slice(0,20);
+    const labels = stats.map(q => q.text || q.id || 'Q');
+    const data = stats.map(q => Math.round((q.pctCorrect ?? q.pct ?? 0)*100));
+    questionChart = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'% correct', data, backgroundColor:'rgba(255,99,71,0.85)' }]}, options:{ indexAxis:'y', scales:{ x:{ beginAtZero:true, max:100, title:{display:true,text:'% correct'} } }, plugins:{ title:{display:true, text:'Per-question % correct (hardest first)'}, legend:{display:false} } } });
+  };
+
+  // Load and render
+  async function loadAnalytics(mode, id, useMock=false) {
+    let data;
+    if (useMock) {
+      data = {
+        totalAttempts: 123,
+        averageScore: 72.34,
+        medianScore: 75.0,
+        scoreDistribution: {"0-10":2,"10-20":3,"20-30":6,"30-40":8,"40-50":12,"50-60":18,"60-70":22,"70-80":25,"80-90":15,"90-100":12},
+        attemptsByDay: {"2025-11-10":3,"2025-11-11":8,"2025-11-12":12,"2025-11-13":20,"2025-11-14":18,"2025-11-15":25,"2025-11-16":37},
+        questionStats: [{id:'q1',text:'Q1',pctCorrect:0.45},{id:'q2',text:'Q2',pctCorrect:0.68},{id:'q3',text:'Q3',pctCorrect:0.82}]
+      };
+    } else {
+      let url;
+      if (mode === 'quiz') url = `/admin/analytics/quizzes/${encodeURIComponent(id)}`;
+      else url = `/analytics/users/${encodeURIComponent(id)}`; // public user analytics
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) { alert('Fetch failed: '+r.status); return; }
+      data = await r.json();
+    }
+
+    updateKpis(data);
+    const ts = sortedTimeSeries(data.attemptsByDay);
+    renderSpark(ts.labels, ts.data);
+    renderAttempts(ts.labels, ts.data);
+    const dist = ensureBuckets(data.scoreDistribution);
+    renderDistribution(dist.labels, dist.data, data.averageScore, data.medianScore);
+    renderQuestions(data.questionStats || []);
+  }
+
+  document.getElementById('loadBtn').addEventListener('click', ()=>{
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const id = document.getElementById('idInput').value.trim();
+    if (!id) { alert('Enter an id'); return; }
+    loadAnalytics(mode, id, false).catch(e=>{ console.error(e); alert('Error: '+e.message); });
+  });
+
+  document.getElementById('mockBtn').addEventListener('click', ()=>{
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    loadAnalytics(mode, 'mock', true);
+  });
+
+  // initial mock load
+  loadAnalytics('quiz','mock',true);
+})();
+</script>
+</body>
+</html>

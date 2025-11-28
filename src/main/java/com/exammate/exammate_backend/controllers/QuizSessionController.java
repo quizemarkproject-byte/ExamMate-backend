@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.controllers;
 
+import com.exammate.exammate_backend.dto.CountResponse;
 import com.exammate.exammate_backend.dto.QuizResultResponse;
 import com.exammate.exammate_backend.dto.QuizSessionStartRequest;
 import com.exammate.exammate_backend.dto.QuizSessionStartResponse;
@@ -20,8 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
-
-import com.exammate.exammate_backend.dto.CountResponse;
 
 @RestController
 @RequestMapping("/quiz-sessions")
@@ -47,7 +46,7 @@ public class QuizSessionController {
     @GetMapping("/results/{userId}")
     @Operation(summary = "Get all results for a user", description = "Retrieve all quiz results for a specific user.")
     public List<QuizResultResponse> getAllResultsForUser(
-            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
+            @Parameter(description = "User ID (UUID)", required = true) @PathVariable UUID userId) {
         return quizSessionService.getAllResultsForUser(userId);
     }
 
@@ -56,7 +55,7 @@ public class QuizSessionController {
     @Operation(summary = "Get result by ID", description = "Retrieve a specific quiz result by its ID.")
     public QuizResultResponse getResultById(
             @Parameter(description = "Result ID (UUID)", required = true) @PathVariable UUID resultId,
-            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
+            @Parameter(description = "User ID (UUID)", required = true) @PathVariable UUID userId) {
         return quizSessionService.getResultById(resultId, userId);
     }
 
@@ -64,7 +63,7 @@ public class QuizSessionController {
     @ResponseStatus(HttpStatus.OK)
     @Operation(summary = "Get results count for a user", description = "Return total number of results for the specified user ID.")
     public CountResponse countResultsForUser(
-            @Parameter(description = "User ID", required = true) @PathVariable String userId) {
+            @Parameter(description = "User ID (UUID)", required = true) @PathVariable UUID userId) {
         return quizSessionService.countResultsForUser(userId);
     }
 }

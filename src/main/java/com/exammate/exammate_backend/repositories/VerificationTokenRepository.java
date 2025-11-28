@@ -1,7 +1,7 @@
 package com.exammate.exammate_backend.repositories;
 
-import com.exammate.exammate_backend.models.VerificationToken;
 import com.exammate.exammate_backend.models.User;
+import com.exammate.exammate_backend.models.VerificationToken;
 import com.exammate.exammate_backend.models.VerificationToken.TokenType;
 import org.springframework.data.jpa.repository.JpaRepository;
 

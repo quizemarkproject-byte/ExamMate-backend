@@ -1,7 +1,6 @@
 package com.exammate.exammate_backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class QuizResultResponse {
     private UUID id;
-    private String userId;
+    private UUID userId;
     private int score;
     private int totalQuestions;
     private String quizTitle;

@@ -1,13 +1,15 @@
 package com.exammate.exammate_backend.config;
 
-import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.models.Question;
+import com.exammate.exammate_backend.models.Quiz;
+import com.exammate.exammate_backend.repositories.QuestionRepository;
 import com.exammate.exammate_backend.repositories.QuizRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -15,6 +17,7 @@ import java.util.List;
 public class DataInitializer implements CommandLineRunner {
 
         private final QuizRepository quizRepository;
+        private final QuestionRepository questionRepository;
 
         @Override
         public void run(String... args) {
@@ -23,32 +26,32 @@ public class DataInitializer implements CommandLineRunner {
                         Quiz general = new Quiz();
                         general.setName("General Knowledge");
                         general.setTimeLimit(Duration.ofMinutes(1));
-                        general.setQuestionLimit(5);
+                        general.setQuestionLimit(3);
 
                         Quiz math = new Quiz();
                         math.setName("Math");
                         math.setTimeLimit(Duration.ofMinutes(15));
-                        math.setQuestionLimit(7);
+                        math.setQuestionLimit(3);
 
                         Quiz science = new Quiz();
                         science.setName("Science");
                         science.setTimeLimit(Duration.ofMinutes(12));
-                        science.setQuestionLimit(6);
+                        science.setQuestionLimit(2);
 
                         Quiz history = new Quiz();
                         history.setName("History");
                         history.setTimeLimit(Duration.ofMinutes(10));
-                        history.setQuestionLimit(5);
+                        history.setQuestionLimit(2);
 
                         Quiz geography = new Quiz();
                         geography.setName("Geography");
                         geography.setTimeLimit(Duration.ofMinutes(10));
-                        geography.setQuestionLimit(5);
+                        geography.setQuestionLimit(2);
 
                         Quiz technology = new Quiz();
                         technology.setName("Technology");
                         technology.setTimeLimit(Duration.ofMinutes(8));
-                        technology.setQuestionLimit(4);
+                        technology.setQuestionLimit(2);
 
                         List<Question> generalQuestions = List.of(
                                         Question.builder()
@@ -154,16 +157,16 @@ public class DataInitializer implements CommandLineRunner {
                                                         .categories(List.of(technology))
                                                         .build());
 
-                        // Set questions
-                        general.setQuestions(generalQuestions);
-                        math.setQuestions(mathQuestions);
-                        science.setQuestions(scienceQuestions);
-                        history.setQuestions(historyQuestions);
-                        geography.setQuestions(geographyQuestions);
-                        technology.setQuestions(technologyQuestions);
+                        // Collect all questions and persist via QuestionRepository (Question is the owning side)
+                        List<Question> all = new ArrayList<>();
+                        all.addAll(generalQuestions);
+                        all.addAll(mathQuestions);
+                        all.addAll(scienceQuestions);
+                        all.addAll(historyQuestions);
+                        all.addAll(geographyQuestions);
+                        all.addAll(technologyQuestions);
 
-                        // Save all quizzes
-                        quizRepository.saveAll(List.of(general, math, science, history, geography, technology));
+                        questionRepository.saveAll(all);
                 }
         }
 

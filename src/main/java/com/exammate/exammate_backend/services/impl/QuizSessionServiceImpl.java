@@ -1,21 +1,23 @@
 package com.exammate.exammate_backend.services.impl;
 
+import com.exammate.exammate_backend.dto.CountResponse;
+import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.dto.QuizResultResponse;
 import com.exammate.exammate_backend.dto.QuizSessionStartRequest;
 import com.exammate.exammate_backend.dto.QuizSessionStartResponse;
 import com.exammate.exammate_backend.dto.QuizSessionSubmissionRequest;
-import com.exammate.exammate_backend.dto.QuestionResponse;
 import com.exammate.exammate_backend.exception.ApiException;
 import com.exammate.exammate_backend.exception.BadRequestException;
 import com.exammate.exammate_backend.exception.NotFoundException;
+import com.exammate.exammate_backend.models.Question;
 import com.exammate.exammate_backend.models.Quiz;
+import com.exammate.exammate_backend.models.QuizAnswer;
 import com.exammate.exammate_backend.models.QuizResult;
 import com.exammate.exammate_backend.models.QuizSession;
-import com.exammate.exammate_backend.models.Question;
+import com.exammate.exammate_backend.repositories.QuestionRepository;
 import com.exammate.exammate_backend.repositories.QuizRepository;
 import com.exammate.exammate_backend.repositories.QuizResultRepository;
 import com.exammate.exammate_backend.repositories.QuizSessionRepository;
-import com.exammate.exammate_backend.repositories.QuestionRepository;
 import com.exammate.exammate_backend.services.QuizSessionService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -27,11 +29,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import com.exammate.exammate_backend.models.QuizAnswer;
-import com.exammate.exammate_backend.dto.CountResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -44,20 +43,14 @@ public class QuizSessionServiceImpl implements QuizSessionService {
 
     @Override
     public QuizSessionStartResponse startSession(QuizSessionStartRequest request) {
-        Optional<Quiz> quizOpt = quizRepository.findById(request.getQuizId());
-        if (quizOpt.isEmpty()) {
-            throw new ApiException("Quiz not found");
-        }
-        Quiz quiz = quizOpt.get();
+        Quiz quiz = quizRepository.findById(request.getQuizId())
+                .orElseThrow(() -> new ApiException("Quiz not found"));
 
         QuizSession inProgress = sessionRepository.findFirstByUserIdAndQuiz_IdAndExpiredFalse(request.getUserId(),
                 quiz.getId());
         if (inProgress != null) {
-            System.out.println("Resuming existing session: " + inProgress.getId() + inProgress.getStartedAt());
             return mapSessionToStartResponse(inProgress);
         }
-
-        System.out.println("Creating new session for user: " + request.getUserId() + " in quiz: " + quiz.getName());
 
         List<Question> allQuestions = questionRepository.findByCategories_Id(request.getQuizId()).orElse(List.of());
         Collections.shuffle(allQuestions);
@@ -94,7 +87,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     @Override
     public QuizResultResponse submitSession(QuizSessionSubmissionRequest request) {
         QuizSession session = sessionRepository.findById(request.getSessionId())
-                .orElseThrow(() -> new NotFoundException("Session not found"));
+                .orElseThrow(() -> new NotFoundException("Session has ended"));
         if (session.isExpired()) {
             throw new BadRequestException("This session has already been submitted.");
         }
@@ -177,7 +170,7 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public List<QuizResultResponse> getAllResultsForUser(String userId) {
+    public List<QuizResultResponse> getAllResultsForUser(UUID userId) {
         List<QuizResult> quizResults = resultRepository.findByUserId(userId);
         if (quizResults.isEmpty()) {
             return Collections.emptyList();
@@ -189,14 +182,14 @@ public class QuizSessionServiceImpl implements QuizSessionService {
     }
 
     @Override
-    public QuizResultResponse getResultById(UUID resultId, String userId) {
+    public QuizResultResponse getResultById(UUID resultId, UUID userId) {
         QuizResult result = resultRepository.findByIdAndQuizSessionUserId(resultId, userId)
                 .orElseThrow(() -> new NotFoundException("Result not found"));
         return mapResultToDto(result);
     }
 
     @Override
-    public CountResponse countResultsForUser(String userId) {
+    public CountResponse countResultsForUser(UUID userId) {
         long count = resultRepository.countByUserId(userId);
         return new CountResponse(count);
     }

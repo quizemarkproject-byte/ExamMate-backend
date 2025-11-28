@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface QuizSessionRepository extends JpaRepository<QuizSession, UUID> {
-    List<QuizSession> findByUserId(String userId);
+    List<QuizSession> findByUserId(UUID userId);
 
-    QuizSession findFirstByUserIdAndQuiz_IdAndExpiredFalse(String userId, UUID quizId);
+    QuizSession findFirstByUserIdAndQuiz_IdAndExpiredFalse(UUID userId, UUID quizId);
 }

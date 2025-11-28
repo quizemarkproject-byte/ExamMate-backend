@@ -11,7 +11,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuizSessionStartRequest {
-    private UUID quizId;
-    private UUID userId;
+public class QuestionStat {
+    private UUID id;
+    private String text;
+    private double pctCorrect; // 0.0 - 1.0
 }
+

@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface QuestionRepository  extends JpaRepository<Question, UUID> {
 	Optional<List<Question>> findByCategories_Id(UUID quizId);
+    List<Question> findAllByOrderByCreatedAtDesc();
 }

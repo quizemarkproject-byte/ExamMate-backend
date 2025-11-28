@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface QuizResultRepository extends JpaRepository<QuizResult, UUID> {
-    List<QuizResult> findByUserId(String userId);
-    Optional<QuizResult> findByIdAndQuizSessionUserId(UUID id, String userId);
-    long countByUserId(String userId);
+    List<QuizResult> findByUserId(UUID userId);
+    Optional<QuizResult> findByIdAndQuizSessionUserId(UUID id, UUID userId);
+    long countByUserId(UUID userId);
 }

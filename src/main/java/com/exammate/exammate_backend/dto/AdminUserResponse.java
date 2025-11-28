@@ -11,7 +11,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class QuizSessionStartRequest {
-    private UUID quizId;
-    private UUID userId;
+public class AdminUserResponse {
+    private UUID id;
+    private String email;
+    private String fullName;
+    private String username;
+    private String role;
+    private boolean enabled;
 }
+

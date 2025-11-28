@@ -14,7 +14,7 @@ import java.util.UUID;
 @Builder
 public class QuizSessionSubmissionRequest {
     private UUID sessionId;
-    private String userId;
+    private UUID userId;
     private List<AnswerSubmission> answers;
 
     @Data

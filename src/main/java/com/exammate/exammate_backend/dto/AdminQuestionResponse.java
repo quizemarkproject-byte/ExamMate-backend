@@ -5,13 +5,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class QuizSessionStartRequest {
-    private UUID quizId;
-    private UUID userId;
+public class AdminQuestionResponse {
+    private UUID id;
+    private String text;
+    private List<String> options;
+    private String correctAnswer;
 }
+
