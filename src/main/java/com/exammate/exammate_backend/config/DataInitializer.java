@@ -1,9 +1,9 @@
 package com.exammate.exammate_backend.config;
 
-import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.models.Question;
-import com.exammate.exammate_backend.repositories.QuizRepository;
+import com.exammate.exammate_backend.models.Quiz;
 import com.exammate.exammate_backend.repositories.QuestionRepository;
+import com.exammate.exammate_backend.repositories.QuizRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

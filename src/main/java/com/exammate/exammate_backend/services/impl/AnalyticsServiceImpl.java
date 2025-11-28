@@ -3,9 +3,8 @@ package com.exammate.exammate_backend.services.impl;
 import com.exammate.exammate_backend.dto.AnalyticsResponse;
 import com.exammate.exammate_backend.dto.QuestionStat;
 import com.exammate.exammate_backend.exception.NotFoundException;
-import com.exammate.exammate_backend.models.QuizResult;
 import com.exammate.exammate_backend.models.QuizAnswer;
-import com.exammate.exammate_backend.models.Question;
+import com.exammate.exammate_backend.models.QuizResult;
 import com.exammate.exammate_backend.repositories.QuizRepository;
 import com.exammate.exammate_backend.repositories.QuizResultRepository;
 import com.exammate.exammate_backend.services.AnalyticsService;
@@ -13,7 +12,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service

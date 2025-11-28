@@ -1,7 +1,7 @@
 package com.exammate.exammate_backend.controllers;
 
-import com.exammate.exammate_backend.dto.QuizResponse;
 import com.exammate.exammate_backend.dto.QuestionResponse;
+import com.exammate.exammate_backend.dto.QuizResponse;
 import com.exammate.exammate_backend.services.QuizService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

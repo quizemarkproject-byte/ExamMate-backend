@@ -2,8 +2,8 @@ package com.exammate.exammate_backend.dto;
 
 import com.exammate.exammate_backend.validation.CorrectAnswerInOptions;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

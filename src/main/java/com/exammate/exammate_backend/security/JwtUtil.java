@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.security;
 
+import com.exammate.exammate_backend.models.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -8,12 +9,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.exammate.exammate_backend.models.Role;
-
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.UUID;
-
-import javax.crypto.SecretKey;
 
 @Component
 public class JwtUtil {

@@ -1,13 +1,6 @@
 package com.exammate.exammate_backend.services.impl;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
-
 import com.exammate.exammate_backend.dto.AuthResponse;
-import org.springframework.stereotype.Service;
-
 import com.exammate.exammate_backend.exception.BadRequestException;
 import com.exammate.exammate_backend.models.User;
 import com.exammate.exammate_backend.models.VerificationToken;
@@ -17,9 +10,14 @@ import com.exammate.exammate_backend.repositories.VerificationTokenRepository;
 import com.exammate.exammate_backend.security.JwtUtil;
 import com.exammate.exammate_backend.services.AuthService;
 import com.exammate.exammate_backend.services.EmailService;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
 
 @Service
 @Transactional

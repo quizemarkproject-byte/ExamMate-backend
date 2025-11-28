@@ -1,5 +1,6 @@
 package com.exammate.exammate_backend.controllers;
 
+import com.exammate.exammate_backend.dto.CountResponse;
 import com.exammate.exammate_backend.dto.QuizResultResponse;
 import com.exammate.exammate_backend.dto.QuizSessionStartRequest;
 import com.exammate.exammate_backend.dto.QuizSessionStartResponse;
@@ -20,8 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
-
-import com.exammate.exammate_backend.dto.CountResponse;
 
 @RestController
 @RequestMapping("/quiz-sessions")
