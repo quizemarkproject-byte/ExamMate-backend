@@ -41,6 +41,16 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotFound(BadRequestException ex) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .error(ex.getMessage())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .build();
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse handleInvalidCredentialsException(InvalidCredentialsException ex) {

@@ -7,7 +7,8 @@ import com.exammate.exammate_backend.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,11 +18,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Email OTP authentication endpoints")
 public class AuthController {
 
     private final AuthService authService;
+
+    @Autowired
+    public AuthController(@Qualifier("dummyAuthServiceBean") AuthService authService) {
+        this.authService = authService;
+    }
 
     @Operation(summary = "Request OTP", description = "Submit email to receive an OTP")
     @PostMapping("/request-otp")
