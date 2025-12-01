@@ -88,11 +88,4 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendEmail(email, subject, body);
     }
 
-    private String generateRandomString(int len) {
-        String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        Random r = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < len; i++) sb.append(alphabet.charAt(r.nextInt(alphabet.length())));
-        return sb.toString();
-    }
 }
